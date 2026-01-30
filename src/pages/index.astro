@@ -1,41 +1,37 @@
-<script is:inline src="https://cdn.jsdelivr.net/npm/@meilisearch/instant-meilisearch/dist/instant-meilisearch.umd.min.js"></script>
-<script is:inline src="https://cdn.jsdelivr.net/npm/instantsearch.js@4"></script>
+<script>
+  // We importeren de software direct uit de node_modules (die Vercel voor je installeert)
+  import { instantMeiliSearch } from '@meilisearch/instant-meilisearch';
+  import instantsearch from 'instantsearch.js';
+  import { searchBox, hits, refinementList } from 'instantsearch.js/es/widgets';
 
-<script is:inline>
   function startSearch() {
     const dataEl = document.getElementById('meili-data');
     if (!dataEl) return;
 
-    // Check of de libraries geladen zijn, zo niet: wacht 100ms
-    if (typeof instantMeiliSearch === 'undefined' || typeof instantsearch === 'undefined') {
-      setTimeout(startSearch, 100);
-      return;
-    }
-
     const host = dataEl.dataset.host;
     const key = dataEl.dataset.key;
 
-    // Forceer de search method
+    // Initialiseer de client op de moderne manier
     const searchClient = instantMeiliSearch(host, key);
 
     const search = instantsearch({
       indexName: 'products',
-      searchClient: searchClient,
+      searchClient,
     });
 
     search.addWidgets([
-      instantsearch.widgets.searchBox({ 
+      searchBox({ 
         container: '#searchbox',
         placeholder: 'Zoek op model (bijv. iPhone 15)...' 
       }),
-      instantsearch.widgets.refinementList({ container: '#category-filter', attribute: 'category_primary' }),
-      instantsearch.widgets.refinementList({ container: '#brand-filter', attribute: 'brand' }),
-      instantsearch.widgets.refinementList({ container: '#condition-filter', attribute: 'offers.condition' }),
-      instantsearch.widgets.hits({
+      refinementList({ container: '#category-filter', attribute: 'category_primary' }),
+      refinementList({ container: '#brand-filter', attribute: 'brand' }),
+      refinementList({ container: '#condition-filter', attribute: 'offers.condition' }),
+      hits({
         container: '#hits',
         templates: {
           item: (hit) => `
-            <div class="flex items-center gap-6 bg-white border border-gray-200 p-5 rounded-2xl mb-4 shadow-sm hover:border-blue-500 transition-all">
+            <div class="flex items-center gap-6 bg-white border border-gray-200 p-5 rounded-2xl mb-4 shadow-sm hover:border-blue-500 transition-all cursor-pointer">
               <div class="w-24 h-24 flex-shrink-0 flex items-center justify-center p-2">
                 <img src="https://img.findrefurbished.com/${hit.master_id}.png" class="max-h-full" alt="${hit.title_h1}" />
               </div>
@@ -44,8 +40,8 @@
                 <p class="text-gray-500 text-sm uppercase font-semibold">${hit.brand} • ${hit.category_primary}</p>
               </div>
               <div class="text-right">
-                <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Vanaf</div>
-                <div class="text-3xl font-black text-blue-600">€${hit.min_price.toFixed(2)}</div>
+                <div class="text-xs text-gray-400 font-bold uppercase tracking-wider text-right">Vanaf</div>
+                <div class="text-3xl font-black text-blue-600 leading-none">€${hit.min_price.toFixed(2)}</div>
                 <a href="/product/${hit.variant_slug}" class="inline-block mt-3 bg-blue-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-blue-800">Bekijk</a>
               </div>
             </div>
@@ -57,11 +53,6 @@
     search.start();
   }
 
-  // Start zodra de DOM klaar is
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', startSearch);
-  } else {
-    startSearch();
-  }
+  // Start de zoekfunctie
+  startSearch();
 </script>
-
