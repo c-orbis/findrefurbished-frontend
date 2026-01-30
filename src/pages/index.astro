@@ -4,7 +4,7 @@ import Layout from '../layouts/Layout.astro';
 
 <Layout title="Vind Refurbished - iPhones, iPads & Meer">
   <main class="max-w-7xl mx-auto px-4 py-8">
-    <h1 class="text-4xl font-black mb-8">Vind Refurbished</h1>
+    <h1 class="text-4xl font-black mb-8 text-gray-900">Vind Refurbished</h1>
     
     <!-- Zoekbalk -->
     <div id="searchbox" class="mb-8"></div>
@@ -34,12 +34,17 @@ import Layout from '../layouts/Layout.astro';
   </main>
 </Layout>
 
-<script>
-<script is:inline src="https://cdn.jsdelivr.net"></script>
-<script is:inline src="https://cdn.jsdelivr.net"></script>
+<!-- We voegen dit element toe om de keys veilig door te geven aan het inline script -->
+<div id="meili-data" 
+     data-host={import.meta.env.PUBLIC_MEILI_HOST} 
+     data-key={import.meta.env.PUBLIC_MEILI_SEARCH_KEY}>
+</div>
+
+<!-- De juiste links naar de scripts -->
+<script is:inline src="https://cdn.jsdelivr.net/npm/@meilisearch/instant-meilisearch/dist/instant-meilisearch.umd.min.js"></script>
+<script is:inline src="https://cdn.jsdelivr.net/npm/instantsearch.js@4"></script>
 
 <script is:inline>
-  // We halen de keys op uit de meta-tags die Astro voor ons vult
   const host = document.getElementById('meili-data').dataset.host;
   const key = document.getElementById('meili-data').dataset.key;
 
@@ -50,7 +55,6 @@ import Layout from '../layouts/Layout.astro';
     searchClient,
   });
 
-  // Voeg hier je widgets weer toe (searchBox, hits, refinementList) zoals we eerder deden
   search.addWidgets([
     instantsearch.widgets.searchBox({ 
       container: '#searchbox', 
@@ -67,7 +71,7 @@ import Layout from '../layouts/Layout.astro';
         item: (hit) => `
           <div class="flex items-center gap-6 bg-white border border-gray-200 p-5 rounded-2xl mb-4 shadow-sm">
             <div class="w-24 h-24 flex-shrink-0 flex items-center justify-center p-2">
-              <img src="https://img.findrefurbished.com{hit.master_id}.png" class="max-h-full" alt="${hit.title_h1}" />
+              <img src="https://img.findrefurbished.com/${hit.master_id}.png" class="max-h-full" alt="${hit.title_h1}" />
             </div>
             <div class="flex-grow">
               <h2 class="text-xl font-bold text-gray-900">${hit.title_h1}</h2>
@@ -85,9 +89,3 @@ import Layout from '../layouts/Layout.astro';
 
   search.start();
 </script>
-
-<!-- We voegen dit element toe om de keys veilig door te geven aan het inline script -->
-<div id="meili-data" 
-     data-host={import.meta.env.PUBLIC_MEILI_HOST} 
-     data-key={import.meta.env.PUBLIC_MEILI_SEARCH_KEY}>
-</div>
