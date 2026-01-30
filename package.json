@@ -15,7 +15,5 @@
     "instantsearch.js": "latest",
     "tailwindcss": "^3.4.0",
     "@astrojs/tailwind": "^5.1.0"
-    "@meilisearch/instant-meilisearch": "latest",
-    "instantsearch.js": "latest"
   }
 }
