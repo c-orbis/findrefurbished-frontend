@@ -1,3 +1,43 @@
+---
+// Zorg dat de import exact klopt
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Vind Refurbished">
+  <main class="max-w-7xl mx-auto px-4 py-8 text-gray-900">
+    <h1 class="text-4xl font-black mb-8">Vind Refurbished</h1>
+    
+    <div id="searchbox" class="mb-8"></div>
+
+    <div class="flex flex-col md:flex-row gap-10">
+      <aside class="w-full md:w-72 space-y-8">
+        <div>
+           <h3 class="font-bold text-xs uppercase tracking-widest text-gray-400 mb-4">Categorie</h3>
+           <div id="category-filter"></div>
+        </div>
+        <div>
+           <h3 class="font-bold text-xs uppercase tracking-widest text-gray-400 mb-4">Merk</h3>
+           <div id="brand-filter"></div>
+        </div>
+        <div>
+           <h3 class="font-bold text-xs uppercase tracking-widest text-gray-400 mb-4">Conditie</h3>
+           <div id="condition-filter"></div>
+        </div>
+      </aside>
+
+      <div class="flex-grow text-gray-900">
+        <div id="hits"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Dit element MOET aanwezig zijn voor het script -->
+  <div id="meili-data" 
+       data-host={import.meta.env.PUBLIC_MEILI_HOST} 
+       data-key={import.meta.env.PUBLIC_MEILI_SEARCH_KEY}>
+  </div>
+</Layout>
+
 <script>
   import { instantMeiliSearch } from '@meilisearch/instant-meilisearch';
   import instantsearch from 'instantsearch.js';
@@ -5,17 +45,12 @@
 
   function init() {
     console.log("Start initialisatie zoekmachine...");
-    
     const dataEl = document.getElementById('meili-data');
-    if (!dataEl) {
-      console.error("Data element #meili-data niet gevonden!");
-      return;
-    }
+    if (!dataEl) return;
 
     const { host, key } = dataEl.dataset;
-    console.log("Verbinden met host:", host);
-
     const searchClient = instantMeiliSearch(host, key);
+    
     const search = instantsearch({
       indexName: 'products',
       searchClient,
@@ -29,14 +64,14 @@
       hits({
         container: '#hits',
         templates: {
-          empty: '<p class="p-8 text-center text-gray-500">Geen producten gevonden voor deze zoekopdracht.</p>',
+          empty: '<p class="p-8 text-center text-gray-500">Geen producten gevonden.</p>',
           item: (hit) => `
-            <div class="flex items-center gap-6 bg-white border p-5 rounded-2xl mb-4 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center gap-6 bg-white border border-gray-200 p-5 rounded-2xl mb-4 shadow-sm text-gray-900">
               <div class="w-24 h-24 flex-shrink-0 flex items-center justify-center">
                 <img src="https://img.findrefurbished.com/${hit.master_id}.png" class="max-h-full" onerror="this.src='https://placehold.co'" />
               </div>
               <div class="flex-grow">
-                <h2 class="text-xl font-bold text-gray-900">${hit.title_h1}</h2>
+                <h2 class="text-xl font-bold">${hit.title_h1}</h2>
                 <p class="text-gray-500 text-sm uppercase font-semibold">${hit.brand} • ${hit.category_primary}</p>
               </div>
               <div class="text-right">
@@ -53,8 +88,6 @@
     console.log("Zoekmachine gestart!");
   }
 
-  // Zorg dat Astro dit script pas uitvoert als de DOM klaar is
   document.addEventListener('astro:page-load', init);
-  // Fallback voor de eerste keer laden
   init();
 </script>
