@@ -49,7 +49,7 @@ import Layout from '../layouts/Layout.astro';
           item: (hit) => `
             <div class="flex items-center gap-6 bg-white border p-5 rounded-2xl mb-4 shadow-sm">
               <div class="w-24 h-24 flex-shrink-0">
-                <img src="https://img.findrefurbished.com{hit.master_id}.png" class="max-h-full" />
+                <img src="https://img.findrefurbished.com/${hit.master_id}.png" class="max-h-full" />
               </div>
               <div class="flex-grow">
                 <h2 class="text-xl font-bold">${hit.title_h1}</h2>
