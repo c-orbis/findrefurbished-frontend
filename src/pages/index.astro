@@ -2,9 +2,9 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="Vind Refurbished - Alle aanbiedingen">
+<Layout title="Vind Refurbished - Vergelijk alle prijzen">
   <main class="max-w-7xl mx-auto px-4 py-8">
-    <h1 class="text-4xl font-black mb-8 text-gray-900 leading-tight">Vind Refurbished</h1>
+    <h1 class="text-4xl font-black mb-8 text-gray-900 leading-tight tracking-tight">Vind Refurbished</h1>
     
     <!-- Zoekbalk bovenaan -->
     <div id="searchbox" class="mb-8"></div>
@@ -13,15 +13,15 @@ import Layout from '../layouts/Layout.astro';
       <!-- Sidebar Filters (Links) -->
       <aside class="w-full md:w-72 space-y-8">
         <div class="filter-section border-b pb-6 border-gray-100">
-          <h3 class="font-bold text-gray-400 uppercase text-[10px] tracking-widest mb-4 italic">Categorie</h3>
+          <h3 class="font-bold text-gray-400 uppercase text-[10px] tracking-widest mb-4 italic text-right">Categorie</h3>
           <div id="category-filter"></div>
         </div>
         <div class="filter-section border-b pb-6 border-gray-100">
-          <h3 class="font-bold text-gray-400 uppercase text-[10px] tracking-widest mb-4 italic">Merk</h3>
+          <h3 class="font-bold text-gray-400 uppercase text-[10px] tracking-widest mb-4 italic text-right">Merk</h3>
           <div id="brand-filter"></div>
         </div>
         <div class="filter-section">
-          <h3 class="font-bold text-gray-400 uppercase text-[10px] tracking-widest mb-4 italic">Conditie</h3>
+          <h3 class="font-bold text-gray-400 uppercase text-[10px] tracking-widest mb-4 italic text-right">Conditie</h3>
           <div id="condition-filter"></div>
         </div>
       </aside>
@@ -51,19 +51,24 @@ import Layout from '../layouts/Layout.astro';
 
     const { host, key } = dataEl.dataset;
 
-    // FIX: We forceren de client creatie met een duidelijke variabele
+    // FIX: Expliciete initialisatie van de client om de "search method" error te voorkomen
     const meiliSearchClient = instantMeiliSearch(host, key);
 
     const search = instantsearch({
       indexName: 'products',
-      // Expliciete toewijzing om de "search method" error te voorkomen
       searchClient: meiliSearchClient,
+      future: {
+        preserveSharedStateOnUnmount: true,
+      },
     });
 
     search.addWidgets([
       searchBox({ 
         container: '#searchbox', 
-        placeholder: 'Zoek op model (bijv. iPhone 15 Pro)...' 
+        placeholder: 'Zoek op model (bijv. iPhone 15 Pro)...',
+        cssClasses: {
+          input: 'w-full p-4 rounded-2xl border-2 border-gray-100 focus:border-blue-500 outline-none transition-all shadow-sm text-lg'
+        }
       }),
       
       refinementList({ container: '#category-filter', attribute: 'category_primary' }),
@@ -73,20 +78,22 @@ import Layout from '../layouts/Layout.astro';
       hits({
         container: '#hits',
         templates: {
-          empty: (results) => `<p class="p-10 text-center text-gray-500 bg-white rounded-xl border border-dashed border-gray-300 italic">Geen producten gevonden voor "${results.query}".</p>`,
+          empty: (results) => `<div class="p-10 text-center bg-white rounded-3xl border border-dashed border-gray-200">
+            <p class="text-gray-400 italic">Geen producten gevonden voor "${results.query}".</p>
+          </div>`,
           item: (hit) => `
-            <div class="flex items-center gap-6 bg-white border border-gray-200 p-5 rounded-2xl mb-4 shadow-sm hover:border-blue-500 transition-all hover:shadow-md group">
-              <div class="w-24 h-24 flex-shrink-0 flex items-center justify-center p-2 bg-gray-50 rounded-xl group-hover:bg-white transition-colors">
-                <img src="https://img.findrefurbished.com/${hit.master_id}.png" class="max-h-full transition-transform group-hover:scale-105" alt="${hit.title_h1}" onerror="this.src='https://placehold.com'" />
+            <div class="flex items-center gap-6 bg-white border border-gray-200 p-5 rounded-3xl mb-4 shadow-sm hover:border-blue-500 transition-all hover:shadow-xl group cursor-pointer">
+              <div class="w-28 h-28 flex-shrink-0 flex items-center justify-center p-3 bg-gray-50 rounded-2xl group-hover:bg-white transition-colors">
+                <img src="https://img.findrefurbished.com{hit.master_id}.png" class="max-h-full transition-transform group-hover:scale-110" alt="${hit.title_h1}" onerror="this.src='https://placehold.co'" />
               </div>
               <div class="flex-grow">
-                <h2 class="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">${hit.title_h1}</h2>
-                <p class="text-gray-400 text-[11px] uppercase font-bold tracking-widest mt-1">${hit.brand} • ${hit.category_primary}</p>
+                <h2 class="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors leading-tight">${hit.title_h1}</h2>
+                <p class="text-gray-400 text-[11px] uppercase font-black tracking-widest mt-2">${hit.brand} • ${hit.category_primary}</p>
               </div>
-              <div class="text-right flex flex-col justify-center min-w-[130px]">
-                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter mb-[-4px]">Vanaf</div>
-                <div class="text-3xl font-black text-blue-600">€${hit.min_price.toFixed(2)}</div>
-                <a href="/product/${hit.variant_slug}" class="inline-block mt-3 bg-blue-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-blue-800 transition-colors text-center text-sm shadow-sm">Bekijk Deals</a>
+              <div class="text-right flex flex-col justify-center min-w-[140px] border-l border-gray-50 pl-6">
+                <div class="text-[10px] text-gray-400 font-bold uppercase tracking-tighter mb-[-2px]">Vanaf</div>
+                <div class="text-3xl font-black text-blue-600 leading-none">€${hit.min_price.toFixed(2)}</div>
+                <a href="/product/${hit.variant_slug}" class="inline-block mt-4 bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-blue-800 transition-all text-center text-sm shadow-sm active:scale-95">Bekijk Deals</a>
               </div>
             </div>
           `,
@@ -95,10 +102,10 @@ import Layout from '../layouts/Layout.astro';
     ]);
 
     search.start();
-    console.log("Zoekmachine succesvol gestart op " + host);
+    console.log("Zoekmachine succesvol gestart.");
   }
 
-  // Zorg dat Astro de JS laadt bij elke pagina-navigatie en eerste load
+  // Werkt voor zowel de eerste load als Astro-navigatie
   document.addEventListener('astro:page-load', init);
   init();
 </script>
