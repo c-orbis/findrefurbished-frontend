@@ -76,7 +76,7 @@ import Layout from '../layouts/Layout.astro';
           item: (hit) => `
             <div class="flex items-center gap-6 bg-white border border-gray-200 p-5 rounded-2xl mb-4 shadow-sm hover:border-blue-500 transition-all">
               <div class="w-24 h-24 flex-shrink-0 flex items-center justify-center p-2">
-                <img src="https://img.findrefurbished.com{hit.master_id}.png" class="max-h-full" alt="${hit.title_h1}" onerror="this.src='https://placehold.co'" />
+                <img src="https://img.findrefurbished.com/${hit.master_id}.png" class="max-h-full" alt="${hit.title_h1}" onerror="this.src='https://placehold.com'" />
               </div>
               <div class="flex-grow">
                 <h2 class="text-xl font-bold text-gray-900">${hit.title_h1}</h2>
