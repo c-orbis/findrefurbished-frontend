@@ -63,9 +63,10 @@ import Layout from '../layouts/Layout.astro';
           },
           body: JSON.stringify({
             q: params.query || "",
-            limit: params.hitsPerPage || 20,
-            filter: params.filters || "", // Verwerkt de vinkjes uit de sidebar
-            facets: ["brand", "offers.condition"] // Vraagt de data op voor de filters
+            limit: 20,
+            // DIT IS DE FIX: We sturen de filters door naar Meilisearch
+            filter: params.filters || "", 
+            facets: ["brand", "offers.condition"]
           })
         });
         
