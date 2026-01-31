@@ -36,33 +36,30 @@ import Layout from '../layouts/Layout.astro';
       return;
     }
 
-    // Kogelvrije initialisatie voor de CDN/UMD versie
-    let client;
-    try {
-      // Probeer de verschillende manieren waarop de UMD-bundel zich kan presenteren
-      client = (typeof IMS.instantMeiliSearch === 'function') 
-        ? IMS.instantMeiliSearch(host, key) 
-        : IMS(host, key);
-    } catch (e) {
-      console.error("Fout bij aanmaken client:", e);
-      return;
-    }
+        // AGRESSIEVE INITIALISATIE
+    let client = (typeof IMS.instantMeiliSearch === 'function') 
+      ? IMS.instantMeiliSearch(host, key) 
+      : (typeof IMS === 'function' ? IMS(host, key) : IMS);
 
-    // De wrapper die de search methode ALTIJD vindbaar maakt voor InstantSearch
+    // We forceren de search methode door diep in het object te graven
     const searchClient = {
       search(requests) {
-        return client.search(requests);
+        // We zoeken de echte functie, waar hij ook verstopt zit
+        const actualSearch = client.search || 
+                             (client.instantMeiliSearch && client.instantMeiliSearch.search) ||
+                             (typeof client === 'function' ? client : null);
+        
+        if (!actualSearch || typeof actualSearch !== 'function') {
+          console.error("KRITIEKE FOUT: De search-methode is onvindbaar in de geladen scripts.", client);
+          return Promise.reject("Search method missing");
+        }
+        return actualSearch(requests);
       },
       searchForFacetValues(requests) {
-        return client.searchForFacetValues ? client.searchForFacetValues(requests) : undefined;
+        const facetFn = client.searchForFacetValues || (client.instantMeiliSearch && client.instantMeiliSearch.searchForFacetValues);
+        return facetFn ? facetFn(requests) : undefined;
       }
     };
-
-    const search = instantsearch({
-      indexName: 'products',
-      searchClient: searchClient,
-      future: { preserveSharedStateOnUnmount: true }
-    });
 
     search.addWidgets([
       instantsearch.widgets.searchBox({ 
