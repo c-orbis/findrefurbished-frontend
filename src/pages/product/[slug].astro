@@ -29,7 +29,7 @@ const product = (searchData.hits && searchData.hits.length > 0) ? searchData.hit
 if (!product) {
   // Voor debuggen kun je deze regel tijdelijk veranderen in: 
   // throw new Error(`Product niet gevonden voor slug: ${slug}`);
-  <h1>Debug: {slug}</h1>
+  return Astro.redirect('/404');
 }
 
 const sortedOffers = product.offers?.sort((a, b) => a.price - b.price) || [];
