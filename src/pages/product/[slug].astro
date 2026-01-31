@@ -43,10 +43,10 @@ const sortedOffers = product.offers?.sort((a, b) => Number(a.price) - Number(b.p
     <div class="grid md:grid-cols-2 gap-12 mb-16 items-center">
       <div class="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm flex justify-center">
         <img 
-          src={`https://img.findrefurbished.com{product.master_id}.png`} 
+          src={`https://img.findrefurbished.com/${product.master_id}.png`} 
           alt={product.title_h1}
           class="max-h-[400px] object-contain"
-          onerror="this.src='https://placehold.co'"
+          onerror="this.src='https://placehold.co/200x200?text=Geen+Foto'"
         />
       </div>
       <div>
