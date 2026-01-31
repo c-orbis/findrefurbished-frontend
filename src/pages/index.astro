@@ -11,10 +11,15 @@ import Layout from '../layouts/Layout.astro';
 
     <div class="flex flex-col md:flex-row gap-10">
       <!-- Sidebar voor filters -->
-      <aside class="w-full md:w-64 space-y-6">
+      <aside class="w-full md:w-64 space-y-8">
         <div>
-          <h3 class="font-bold mb-2 text-gray-400 uppercase text-xs tracking-widest italic">Merk</h3>
+          <h3 class="font-bold mb-4 text-gray-900 uppercase text-[10px] tracking-widest italic border-b pb-2 border-gray-100">Merk</h3>
           <div id="brand-filter"></div>
+        </div>
+        
+        <div>
+          <h3 class="font-bold mb-4 text-gray-900 uppercase text-[10px] tracking-widest italic border-b pb-2 border-gray-100">Conditie</h3>
+          <div id="condition-filter"></div>
         </div>
       </aside>
 
@@ -32,7 +37,7 @@ import Layout from '../layouts/Layout.astro';
   </div>
 </Layout>
 
-<!-- 1. Verwijder alle andere script-tags en imports uit je bestand -->
+<!-- 1. Laad de bibliotheken direct via CDN -->
 <script is:inline src="https://cdn.jsdelivr.net/npm/@meilisearch/instant-meilisearch/dist/instant-meilisearch.umd.min.js"></script>
 <script is:inline src="https://cdn.jsdelivr.net/npm/instantsearch.js@4"></script>
 
@@ -41,14 +46,15 @@ import Layout from '../layouts/Layout.astro';
     const dataEl = document.getElementById('meili-data');
     if (!dataEl) return;
 
+    // Forceer HTTPS voor de API aanroep
     const host = dataEl.dataset.host.replace('http://', 'https://');
     const key = dataEl.dataset.key;
 
-    // DE ULTIEME FIX: We bouwen de search methode handmatig via fetch
-    // Dit omzeilt alle adapter-fouten
+    // Handmatige SearchClient om Astro-bundler fouten te omzeilen
     const searchClient = {
       async search(requests) {
         const { indexName, params } = requests[0];
+        
         const response = await fetch(`${host}/indexes/${indexName}/search`, {
           method: 'POST',
           headers: {
@@ -56,25 +62,25 @@ import Layout from '../layouts/Layout.astro';
             'Authorization': `Bearer ${key}`
           },
           body: JSON.stringify({
-            q: params.query,
+            q: params.query || "",
             limit: params.hitsPerPage || 20,
-            filter: params.filters || "",
-            facets: ["brand", "category_primary", "offers.condition"]
+            filter: params.filters || "", // Verwerkt de vinkjes uit de sidebar
+            facets: ["brand", "offers.condition"] // Vraagt de data op voor de filters
           })
         });
+        
         const data = await response.json();
         
-        // Vertaal Meilisearch output naar InstantSearch formaat
         return {
           results: requests.map(() => ({
             hits: data.hits,
-            nbHits: data.estimatedTotalHits,
-            nbPages: Math.ceil(data.estimatedTotalHits / 20),
+            nbHits: data.estimatedTotalHits || data.hits.length,
+            nbPages: Math.ceil((data.estimatedTotalHits || data.hits.length) / 20),
             page: 0,
             processingTimeMS: data.processingTimeMs,
             hitsPerPage: 20,
             query: params.query,
-            facets: data.facetDistribution,
+            facets: data.facetDistribution, // Zorgt voor de getallen achter de filters
             exhaustiveNbHits: true
           }))
         };
@@ -87,22 +93,62 @@ import Layout from '../layouts/Layout.astro';
     });
 
     search.addWidgets([
-      instantsearch.widgets.searchBox({ container: '#searchbox', placeholder: 'Zoek op model...' }),
+      // Zoekbalk
+      instantsearch.widgets.searchBox({ 
+        container: '#searchbox', 
+        placeholder: 'Zoek op model (bijv. iPhone 15 Pro)...' 
+      }),
+
+      // Merk Filter
+      instantsearch.widgets.refinementList({
+        container: '#brand-filter',
+        attribute: 'brand',
+        templates: {
+          item: `
+            <label class="flex items-center gap-2 cursor-pointer py-1 group">
+              <input type="checkbox" class="rounded border-gray-300" {{#isRefined}}checked{{/isRefined}} />
+              <span class="text-sm {{#isRefined}}font-bold text-blue-600{{/isRefined}} group-hover:text-blue-500">{{label}}</span>
+              <span class="text-[10px] text-gray-400">({{count}})</span>
+            </label>
+          `,
+        },
+      }),
+
+      // Conditie Filter
+      instantsearch.widgets.refinementList({
+        container: '#condition-filter',
+        attribute: 'offers.condition',
+        transformItems(items) {
+          return items.map(item => ({
+            ...item,
+            label: item.label.charAt(0).toUpperCase() + item.label.slice(1),
+          }));
+        },
+        templates: {
+          item: `
+            <label class="flex items-center gap-2 cursor-pointer py-1 group">
+              <input type="checkbox" class="rounded border-gray-300" {{#isRefined}}checked{{/isRefined}} />
+              <span class="text-sm {{#isRefined}}font-bold text-blue-600{{/isRefined}} group-hover:text-blue-500">{{label}}</span>
+              <span class="text-[10px] text-gray-400">({{count}})</span>
+            </label>
+          `,
+        },
+      }),
+
+      // Resultatenlijst
       instantsearch.widgets.hits({
         container: '#hits',
         templates: {
           item: (hit) => `
-            <div class="p-4 border border-gray-200 mb-2 bg-white rounded-xl shadow-sm flex items-center gap-4">
-              
+            <div class="p-4 border border-gray-200 mb-2 bg-white rounded-xl shadow-sm flex items-center gap-4 hover:border-blue-500 transition-colors group">
               <img src="https://img.findrefurbished.com/${hit.master_id}.png" class="w-16 h-16 object-contain" onerror="this.src='https://placehold.co/200x200?text=Geen+Foto'" />
-
-                <div class="flex-grow">
-                <div class="font-bold text-gray-900 leading-tight">${hit.title_h1}</div>
+              <div class="flex-grow">
+                <div class="font-bold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors">${hit.title_h1}</div>
                 <div class="text-[10px] text-gray-400 uppercase font-bold tracking-widest mt-1">${hit.brand}</div>
               </div>
               <div class="text-right min-w-[100px]">
                 <div class="text-2xl font-black text-blue-600 leading-none">€${Number(hit.min_price).toFixed(2)}</div>
-                <a href="/product/${hit.variant_slug}" class="inline-block mt-2 text-[11px] text-blue-600 font-bold hover:underline">Bekijk deals</a>
+                <a href="/product/${hit.variant_slug}" class="inline-block mt-2 text-[11px] text-blue-600 font-bold hover:underline italic">Bekijk deals</a>
               </div>
             </div>
           `,
@@ -112,9 +158,11 @@ import Layout from '../layouts/Layout.astro';
     ]);
 
     search.start();
-    console.log("🚀 Handmatige Search Engine gestart!");
+    console.log("🚀 Zoekmachine inclusief filters operationeel!");
   }
 
+  // Initialisatie bij laden en Astro transities
   window.addEventListener('load', startSearch);
   document.addEventListener('astro:page-load', startSearch);
 </script>
+
