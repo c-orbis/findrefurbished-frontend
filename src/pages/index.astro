@@ -51,48 +51,52 @@ import Layout from '../layouts/Layout.astro';
     const key = dataEl.dataset.key;
 
     // Handmatige SearchClient om Astro-bundler fouten te omzeilen
-        const searchClient = {
+            const searchClient = {
       async search(requests) {
-        const request = requests[0]; // We pakken het eerste verzoek
-        const { indexName, params } = request;
+        // InstantSearch kan meerdere verzoeken tegelijk sturen (bijv. voor hits en voor facetten)
+        const responses = await Promise.all(
+          requests.map(async (request) => {
+            const { indexName, params } = request;
+            
+            // Haal de filters op. Let op: we gebruiken params.filters direct
+            const filterString = params.filters ? params.filters.replace(/:/g, ' = ') : "";
+            
+            console.log("Verzoek voor", indexName, "| Filter:", filterString);
 
-        // DIT IS DE FIX: We zetten InstantSearch filters om naar Meilisearch syntax
-        // InstantSearch gebruikt vaak ':', Meilisearch wil '='.
-        const meiliFilter = params.filters ? params.filters.replace(/:/g, ' = ') : "";
+            const res = await fetch(`${host}/indexes/${indexName}/search`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${key}`
+              },
+              body: JSON.stringify({
+                q: params.query || "",
+                limit: 20,
+                filter: filterString,
+                facets: ["brand", "offers.condition"]
+              })
+            });
 
-        console.log("Actief filter naar Meilisearch:", meiliFilter);
+            const data = await res.json();
 
-        const response = await fetch(`${host}/indexes/${indexName}/search`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${key}`
-          },
-          body: JSON.stringify({
-            q: params.query || "",
-            limit: 20,
-            filter: meiliFilter, // De vertaalde string
-            facets: ["brand", "offers.condition"]
+            return {
+              hits: data.hits,
+              nbHits: data.estimatedTotalHits || data.hits.length,
+              nbPages: 1,
+              page: 0,
+              processingTimeMS: data.processingTimeMs,
+              hitsPerPage: 20,
+              query: params.query,
+              facets: data.facetDistribution,
+              exhaustiveNbHits: true
+            };
           })
-        });
-        
-        const data = await response.json();
-        
-        return {
-          results: requests.map(() => ({
-            hits: data.hits,
-            nbHits: data.estimatedTotalHits || data.hits.length,
-            nbPages: 1,
-            page: 0,
-            processingTimeMS: data.processingTimeMs,
-            hitsPerPage: 20,
-            query: params.query,
-            facets: data.facetDistribution,
-            exhaustiveNbHits: true
-          }))
-        };
+        );
+
+        return { results: responses };
       }
     };
+
 
     const search = instantsearch({
       indexName: 'products',
