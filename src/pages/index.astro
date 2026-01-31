@@ -32,96 +32,64 @@ import Layout from '../layouts/Layout.astro';
   </div>
 </Layout>
 
-<script is:inline src="https://cdn.jsdelivr.net/npm/@meilisearch/instant-meilisearch/dist/instant-meilisearch.umd.min.js"></script>
-<script is:inline src="https://cdn.jsdelivr.net/npm/instantsearch.js@4"></script>
+<script>
+  // We importeren de software direct uit de node_modules (die Vercel voor je installeert)
+  import { instantMeiliSearch } from '@meilisearch/instant-meilisearch';
+  import instantsearch from 'instantsearch.js';
+  import { searchBox, hits, refinementList } from 'instantsearch.js/es/widgets';
 
-<script is:inline>
-  function startSearch() {
+  async function init() {
     const dataEl = document.getElementById('meili-data');
     if (!dataEl) return;
 
-    const host = dataEl.dataset.host.replace('http://', 'https://');
+    const host = dataEl.dataset.host?.replace('http://', 'https://');
     const key = dataEl.dataset.key;
 
-    // 1. Zoek de library op alle mogelijke plekken in het geheugen
-    const IMS = window.instantMeiliSearch?.instantMeiliSearch || window.instantMeiliSearch;
-    
-    if (typeof IMS !== 'function') {
-      console.warn("Zoekmachine library nog niet klaar, herpoging...");
-      setTimeout(startSearch, 100);
-      return;
+    console.log("--- STARTING ENGINE ---");
+
+    try {
+      // We maken de client aan via de officieel gebundelde SDK
+      const searchClient = instantMeiliSearch(host, key);
+
+      const search = instantsearch({
+        indexName: 'products',
+        searchClient,
+        future: { preserveSharedStateOnUnmount: true }
+      });
+
+      search.addWidgets([
+        searchBox({ container: '#searchbox', placeholder: 'Zoek op model...' }),
+        refinementList({ container: '#brand-filter', attribute: 'brand' }),
+        hits({
+          container: '#hits',
+          templates: {
+            item: (hit) => `
+              <div class="p-4 border mb-2 bg-white rounded-xl shadow-sm flex items-center gap-4 group hover:border-blue-500 transition-all">
+                <img src="https://img.findrefurbished.com$/{hit.master_id}.png" class="w-16 h-16 object-contain" onerror="this.src='https://placehold.co'" />
+                <div class="flex-grow">
+                  <div class="font-bold text-gray-900 leading-tight">${hit.title_h1}</div>
+                  <div class="text-[10px] text-gray-400 uppercase font-bold tracking-widest mt-1">${hit.brand}</div>
+                </div>
+                <div class="text-right min-w-[100px]">
+                  <div class="text-3xl font-black text-blue-600">€${Number(hit.min_price).toFixed(2)}</div>
+                  <a href="/product/${hit.variant_slug}" class="inline-block mt-2 text-xs font-bold text-blue-500 hover:underline">Bekijk deals</a>
+                </div>
+              </div>
+            `,
+            empty: '<div class="p-10 text-center text-gray-500">❌ Geen producten gevonden.</div>'
+          }
+        })
+      ]);
+
+      search.start();
+      console.log("Engine is running successfully!");
+    } catch (err) {
+      console.error("Engine failed to start:", err);
     }
-
-    // 2. Maak de rauwe client aan
-    const rawClient = IMS(host, key);
-
-        // DE KOGELVRIJE PROXY: Deze vindt de search-functie, waar hij ook verstopt zit
-    const searchClient = {
-      search(requests) {
-        // We zoeken de echte functie op 3 verschillende plekken
-        const searchFn = rawClient.search || 
-                         (rawClient.instantMeiliSearch && rawClient.instantMeiliSearch.search) ||
-                         (typeof rawClient === 'function' ? rawClient : null);
-        
-        if (typeof searchFn !== 'function') {
-          console.error("KRITIEKE FOUT: De search-functie is onvindbaar in de adapter!", rawClient);
-          return Promise.reject("Search method missing");
-        }
-        return searchFn(requests);
-      },
-      searchForFacetValues(requests) {
-        const facetFn = rawClient.searchForFacetValues || 
-                        (rawClient.instantMeiliSearch && rawClient.instantMeiliSearch.searchForFacetValues);
-        return typeof facetFn === 'function' ? facetFn(requests) : undefined;
-      }
-    };
-
-    // 4. Start InstantSearch met onze handmatige client
-    const search = instantsearch({
-      indexName: 'products',
-      searchClient: searchClient,
-    });
-
-    search.addWidgets([
-      instantsearch.widgets.searchBox({ 
-        container: '#searchbox',
-        placeholder: 'Zoek op model...' 
-      }),
-      instantsearch.widgets.refinementList({ 
-        container: '#brand-filter', 
-        attribute: 'brand' 
-      }),
-      instantsearch.widgets.hits({
-        container: '#hits',
-        templates: {
-          item: (hit) => `
-            <div class="p-4 border mb-2 bg-white rounded-xl shadow-sm flex items-center gap-4">
-              <img src="https://img.findrefurbished.com/${hit.master_id}.png" class="w-16 h-16 object-contain" onerror="this.src='https://placehold.co/200x200?text=Geen+Foto'" />
-              <div class="flex-grow">
-                <div class="font-bold text-gray-900 leading-tight">${hit.title_h1}</div>
-                <div class="text-[10px] text-gray-400 uppercase font-bold tracking-widest mt-1">${hit.brand}</div>
-              </div>
-              <div class="text-right min-w-[100px]">
-                <div class="text-[10px] text-gray-400 font-bold uppercase mb-[-4px]">Vanaf</div>
-                <div class="text-2xl font-black text-blue-600 leading-none">€${Number(hit.min_price).toFixed(2)}</div>
-                <a href="/product/${hit.variant_slug}" class="inline-block mt-2 text-[11px] text-blue-600 font-bold hover:underline">Bekijk deals</a>
-              </div>
-            </div>
-          `,
-          empty: '<div class="p-10 text-center text-gray-500 italic">❌ Geen producten gevonden.</div>'
-        }
-      })
-    ]);
-
-    search.start();
-    console.log("Zoekmachine succesvol geforceerd gestart!");
   }
 
-  // Start direct en luister naar Astro transities
-  if (document.readyState === 'complete') {
-    startSearch();
-  } else {
-    window.addEventListener('load', startSearch);
-  }
-  document.addEventListener('astro:page-load', startSearch);
+  // Luister naar Astro's page load event (voor View Transitions)
+  document.addEventListener('astro:page-load', init);
+  // Initialiseer direct voor de eerste load
+  init();
 </script>
