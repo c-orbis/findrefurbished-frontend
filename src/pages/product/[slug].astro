@@ -13,11 +13,11 @@ let product = null;
 try {
   const response = await fetch(`${host}/indexes/products/search`, {
     method: 'POST',
-      headers: {
-    'Content-Type': 'application/json',
-    // We gebruiken nu backticks om zeker te zijn dat de spatie er staat
-    'Authorization': Bearer ${import.meta.env.MEILI_SERVER_KEY || import.meta.env.PUBLIC_MEILI_SEARCH_KEY}`` 
-  },
+         headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${import.meta.env.MEILI_SERVER_KEY || import.meta.env.PUBLIC_MEILI_SEARCH_KEY}`
+    },
+
 
     body: JSON.stringify({
       filter: `variant_slug = "${slug}"`,
