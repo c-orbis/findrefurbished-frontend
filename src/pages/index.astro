@@ -33,7 +33,6 @@ import Layout from '../layouts/Layout.astro';
 </Layout>
 
 <script>
-  // We importeren de software direct uit de node_modules (die Vercel voor je installeert)
   import { instantMeiliSearch } from '@meilisearch/instant-meilisearch';
   import instantsearch from 'instantsearch.js';
   import { searchBox, hits, refinementList } from 'instantsearch.js/es/widgets';
@@ -44,16 +43,30 @@ import Layout from '../layouts/Layout.astro';
 
     const host = dataEl.dataset.host?.replace('http://', 'https://');
     const key = dataEl.dataset.key;
+    if (!host || !key) return;
 
     console.log("--- STARTING ENGINE ---");
 
     try {
-      // We maken de client aan via de officieel gebundelde SDK
-      const searchClient = instantMeiliSearch(host, key);
+      // 1. Maak de rauwe client aan
+      const meiliClient = instantMeiliSearch(host, key);
 
+      // 2. DE FIX: We bouwen handmatig de searchClient wrapper. 
+      // Dit voorkomt dat Astro de 'search' methode stript.
+      const searchClient = {
+        ...meiliClient,
+        search(requests) {
+          return meiliClient.search(requests);
+        },
+        searchForFacetValues(requests) {
+          return meiliClient.searchForFacetValues ? meiliClient.searchForFacetValues(requests) : undefined;
+        }
+      };
+
+      // 3. Start InstantSearch met onze handmatige wrapper
       const search = instantsearch({
         indexName: 'products',
-        searchClient,
+        searchClient: searchClient,
         future: { preserveSharedStateOnUnmount: true }
       });
 
@@ -65,13 +78,13 @@ import Layout from '../layouts/Layout.astro';
           templates: {
             item: (hit) => `
               <div class="p-4 border mb-2 bg-white rounded-xl shadow-sm flex items-center gap-4 group hover:border-blue-500 transition-all">
-                <img src="https://img.findrefurbished.com$/{hit.master_id}.png" class="w-16 h-16 object-contain" onerror="this.src='https://placehold.co'" />
+                <img src="https://img.findrefurbished.com/${hit.master_id}.png" class="w-16 h-16 object-contain" onerror="this.src='https://placehold.co'" />
                 <div class="flex-grow">
                   <div class="font-bold text-gray-900 leading-tight">${hit.title_h1}</div>
                   <div class="text-[10px] text-gray-400 uppercase font-bold tracking-widest mt-1">${hit.brand}</div>
                 </div>
                 <div class="text-right min-w-[100px]">
-                  <div class="text-3xl font-black text-blue-600">€${Number(hit.min_price).toFixed(2)}</div>
+                  <div class="text-2xl font-black text-blue-600 leading-none">€${Number(hit.min_price).toFixed(2)}</div>
                   <a href="/product/${hit.variant_slug}" class="inline-block mt-2 text-xs font-bold text-blue-500 hover:underline">Bekijk deals</a>
                 </div>
               </div>
@@ -88,8 +101,8 @@ import Layout from '../layouts/Layout.astro';
     }
   }
 
-  // Luister naar Astro's page load event (voor View Transitions)
+  // Zorg dat Astro dit script altijd uitvoert, ook na navigatie
   document.addEventListener('astro:page-load', init);
-  // Initialiseer direct voor de eerste load
+  // Fallback voor eerste load
   init();
 </script>
