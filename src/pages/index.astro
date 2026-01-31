@@ -28,17 +28,27 @@ import Layout from '../layouts/Layout.astro';
 
     console.log("--- ENGINE START ---");
 
-    // We zoeken handmatig naar de juiste functie in de browser-window
+    // Haal de juiste library op uit het browsergeheugen
     const IMS = window.instantMeiliSearch?.instantMeiliSearch || window.instantMeiliSearch;
     
     if (typeof IMS !== 'function') {
-      console.error("Kritieke fout: Meilisearch functies niet gevonden in browser geheugen.");
+      console.error("Kritieke fout: Meilisearch functies niet gevonden.");
       return;
     }
 
-    const client = IMS(host, key);
+    // Kogelvrije initialisatie voor de CDN/UMD versie
+    let client;
+    try {
+      // Probeer de verschillende manieren waarop de UMD-bundel zich kan presenteren
+      client = (typeof IMS.instantMeiliSearch === 'function') 
+        ? IMS.instantMeiliSearch(host, key) 
+        : IMS(host, key);
+    } catch (e) {
+      console.error("Fout bij aanmaken client:", e);
+      return;
+    }
 
-    // DIT IS DE KEY: We bouwen de wrapper handmatig op om de error te voorkomen
+    // De wrapper die de search methode ALTIJD vindbaar maakt voor InstantSearch
     const searchClient = {
       search(requests) {
         return client.search(requests);
@@ -50,12 +60,15 @@ import Layout from '../layouts/Layout.astro';
 
     const search = instantsearch({
       indexName: 'products',
-      searchClient: searchClient, // Gebruik de handmatige wrapper
+      searchClient: searchClient,
       future: { preserveSharedStateOnUnmount: true }
     });
 
     search.addWidgets([
-      instantsearch.widgets.searchBox({ container: '#searchbox' }),
+      instantsearch.widgets.searchBox({ 
+        container: '#searchbox',
+        placeholder: 'Zoek op model...' 
+      }),
       instantsearch.widgets.hits({
         container: '#hits',
         templates: {
@@ -66,16 +79,23 @@ import Layout from '../layouts/Layout.astro';
     ]);
 
     search.on('render', () => {
-      console.log("Aantal resultaten gevonden:", search.helper.lastResults?.nbHits);
+      const results = search.helper.lastResults;
+      console.log("Aantal resultaten gevonden:", results ? results.nbHits : "laden...");
     });
 
-    search.start();
-    console.log("Engine draait!");
+    try {
+      search.start();
+      console.log("Engine draait!");
+    } catch (err) {
+      console.error("Crash tijdens starten:", err);
+    }
   }
 
-  // Wacht even tot de scripts van het internet binnen zijn
-  window.onload = () => {
+  // Wacht tot de scripts geladen zijn
+  if (document.readyState === 'complete') {
     setTimeout(startEngine, 500);
-  };
+  } else {
+    window.addEventListener('load', () => setTimeout(startEngine, 500));
+  }
 </script>
 
