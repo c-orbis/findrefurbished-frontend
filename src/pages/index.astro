@@ -34,7 +34,8 @@ import Layout from '../layouts/Layout.astro';
       return;
     }
 
-    const meiliClient = instantMeiliSearch(host, key);
+    // We roepen de functie aan vanuit de geladen UMD bundel
+    const meiliClient = instantMeiliSearch.instantMeiliSearch(host, key);
 
     // FIX 2: De kogelvrije wrapper voor de searchClient
     const searchClient = {
