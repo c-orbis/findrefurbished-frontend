@@ -69,7 +69,7 @@ import Layout from '../layouts/Layout.astro';
         templates: {
           item: (hit) => `
             <div class="p-4 border mb-2 bg-white rounded-xl shadow-sm flex items-center gap-4">
-              <img src="https://img.findrefurbished.com{hit.master_id}.png" class="w-12 h-12 object-contain" />
+              <img src="https://img.findrefurbished.com/${hit.master_id}.png" class="w-12 h-12 object-contain" />
               <div class="flex-grow">
                 <div class="font-bold text-gray-900">${hit.title_h1}</div>
                 <div class="text-sm text-gray-500">${hit.brand}</div>
