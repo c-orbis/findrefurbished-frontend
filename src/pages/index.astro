@@ -55,13 +55,24 @@ import Layout from '../layouts/Layout.astro';
     // 2. Maak de rauwe client aan
     const rawClient = IMS(host, key);
 
-    // 3. DE FIX: Bouw handmatig de searchClient met de verplichte search-methode
+        // DE KOGELVRIJE PROXY: Deze vindt de search-functie, waar hij ook verstopt zit
     const searchClient = {
       search(requests) {
-        return rawClient.search(requests);
+        // We zoeken de echte functie op 3 verschillende plekken
+        const searchFn = rawClient.search || 
+                         (rawClient.instantMeiliSearch && rawClient.instantMeiliSearch.search) ||
+                         (typeof rawClient === 'function' ? rawClient : null);
+        
+        if (typeof searchFn !== 'function') {
+          console.error("KRITIEKE FOUT: De search-functie is onvindbaar in de adapter!", rawClient);
+          return Promise.reject("Search method missing");
+        }
+        return searchFn(requests);
       },
       searchForFacetValues(requests) {
-        return rawClient.searchForFacetValues ? rawClient.searchForFacetValues(requests) : undefined;
+        const facetFn = rawClient.searchForFacetValues || 
+                        (rawClient.instantMeiliSearch && rawClient.instantMeiliSearch.searchForFacetValues);
+        return typeof facetFn === 'function' ? facetFn(requests) : undefined;
       }
     };
 
