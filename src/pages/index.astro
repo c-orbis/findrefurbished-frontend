@@ -34,10 +34,18 @@ import Layout from '../layouts/Layout.astro';
       return;
     }
 
-    // Vervang regel 26 door deze "veilige" check
-const meiliClient = (typeof instantMeiliSearch.instantMeiliSearch === 'function') 
-    ? instantMeiliSearch.instantMeiliSearch(host, key) 
-    : instantMeiliSearch(host, key);
+        // Kogelvrije manier om de client te starten vanuit de UMD bundel
+    let meiliClient;
+    if (typeof window.instantMeiliSearch === 'function') {
+      meiliClient = window.instantMeiliSearch(host, key);
+    } else if (window.instantMeiliSearch && typeof window.instantMeiliSearch.instantMeiliSearch === 'function') {
+      meiliClient = window.instantMeiliSearch.instantMeiliSearch(host, key);
+    } else {
+      console.error("ERROR: De Meilisearch functies zijn niet vindbaar in het geladen script.");
+      return;
+    }
+
+    console.log("Client object gecreëerd:", meiliClient);
 
     // FIX 2: De kogelvrije wrapper voor de searchClient
     const searchClient = {
