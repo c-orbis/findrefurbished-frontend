@@ -15,90 +15,65 @@ import Layout from '../layouts/Layout.astro';
   </div>
 </Layout>
 
-<script is:inline src="https://cdn.jsdelivr.net/npm/@meilisearch/instant-meilisearch/dist/instant-meilisearch.umd.min.js"></script>
-<script is:inline src="https://cdn.jsdelivr.net/npm/instantsearch.js@4"></script>
+<script>
+  // We importeren de functies direct uit de geïnstalleerde pakketten
+  import { instantMeiliSearch } from '@meilisearch/instant-meilisearch';
+  import instantsearch from 'instantsearch.js';
+  import { searchBox, hits } from 'instantsearch.js/es/widgets';
 
-<script is:inline>
-  function startEngine() {
+  function init() {
     const dataEl = document.getElementById('meili-data');
     if (!dataEl) return;
 
-    const host = dataEl.dataset.host.replace('http://', 'https://');
+    // Haal de host en key op, forceer HTTPS voor veiligheid
+    const host = dataEl.dataset.host?.replace('http://', 'https://');
     const key = dataEl.dataset.key;
 
-    console.log("--- ENGINE START ---");
-
-    // Haal de juiste library op uit het browsergeheugen
-    const IMS = window.instantMeiliSearch?.instantMeiliSearch || window.instantMeiliSearch;
-    
-    if (typeof IMS !== 'function') {
-      console.error("Kritieke fout: Meilisearch functies niet gevonden.");
+    if (!host || !key) {
+      console.error("Meilisearch configuratie ontbreekt in Vercel!");
       return;
     }
 
-        // AGRESSIEVE INITIALISATIE
-    let client = (typeof IMS.instantMeiliSearch === 'function') 
-      ? IMS.instantMeiliSearch(host, key) 
-      : (typeof IMS === 'function' ? IMS(host, key) : IMS);
+    // We maken de client aan via de officiële SDK
+    const searchClient = instantMeiliSearch(host, key);
 
-    // We forceren de search methode door diep in het object te graven
-    const searchClient = {
-      search(requests) {
-        // We zoeken de echte functie, waar hij ook verstopt zit
-        const actualSearch = client.search || 
-                             (client.instantMeiliSearch && client.instantMeiliSearch.search) ||
-                             (typeof client === 'function' ? client : null);
-        
-        if (!actualSearch || typeof actualSearch !== 'function') {
-          console.error("KRITIEKE FOUT: De search-methode is onvindbaar in de geladen scripts.", client);
-          return Promise.reject("Search method missing");
-        }
-        return actualSearch(requests);
-      },
-      searchForFacetValues(requests) {
-        const facetFn = client.searchForFacetValues || (client.instantMeiliSearch && client.instantMeiliSearch.searchForFacetValues);
-        return facetFn ? facetFn(requests) : undefined;
-      }
-    };
-
-        const search = instantsearch({
+    const search = instantsearch({
       indexName: 'products',
       searchClient: searchClient,
       future: { preserveSharedStateOnUnmount: true }
     });
 
     search.addWidgets([
-      instantsearch.widgets.searchBox({ 
+      searchBox({ 
         container: '#searchbox',
         placeholder: 'Zoek op model...' 
       }),
-      instantsearch.widgets.hits({
+      hits({
         container: '#hits',
         templates: {
-          item: (hit) => `<div>✅ Succes: ${hit.title_h1 || 'Product'}</div>`,
-          empty: '❌ Geen producten gevonden in index "products".'
+          item: (hit) => `
+            <div class="p-4 border mb-2 bg-white rounded-xl shadow-sm flex justify-between items-center">
+              <div>
+                <span class="text-green-600">✅</span> 
+                <strong class="text-gray-900">${hit.title_h1 || 'Product'}</strong>
+              </div>
+              <div class="font-bold text-blue-600">€${hit.min_price}</div>
+            </div>
+          `,
+          empty: '<div class="p-10 text-center text-gray-500">❌ Geen producten gevonden in index "products".</div>'
         }
       })
     ]);
 
     search.on('render', () => {
-      const results = search.helper.lastResults;
-      console.log("Aantal resultaten gevonden:", results ? results.nbHits : "laden...");
+      console.log("Hits gevonden:", search.helper?.lastResults?.nbHits);
     });
 
-    try {
-      search.start();
-      console.log("Engine draait!");
-    } catch (err) {
-      console.error("Crash tijdens starten:", err);
-    }
+    search.start();
+    console.log("Zoekmachine succesvol gestart via Astro Bundler.");
   }
 
-  // Wacht tot de scripts geladen zijn
-  if (document.readyState === 'complete') {
-    setTimeout(startEngine, 500);
-  } else {
-    window.addEventListener('load', () => setTimeout(startEngine, 500));
-  }
+  // Voer uit bij laden en bij Astro pagina-wisselingen
+  document.addEventListener('astro:page-load', init);
+  init();
 </script>
-
