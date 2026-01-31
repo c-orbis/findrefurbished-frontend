@@ -1,57 +1,82 @@
+const response = await fetch(`${host}/indexes/products/search?apiKey=${import.meta.env.PUBLIC_MEILI_SEARCH_KEY}`, {
+
 ---
 import Layout from '../../layouts/Layout.astro';
 
-// 1. Haal de gegevens uit de URL en de omgeving
 const { slug } = Astro.params;
-const host = import.meta.env.PUBLIC_MEILI_HOST;
-const key = import.meta.env.PUBLIC_MEILI_SEARCH_KEY;
 
-let debugInfo = null;
 let product = null;
+let debugInfo = null;
 
-// 2. Voer de zoekopdracht uit op de server
 try {
-  // We plakken de key direct achter de URL
-const response = await fetch(`${host}/indexes/products/search?apiKey=${import.meta.env.PUBLIC_MEILI_SEARCH_KEY}`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-    // Je mag de Authorization header hier zelfs weglaten!
-  },
-  body: JSON.stringify({
-    filter: `variant_slug = "${slug}"`,
-    limit: 1
-  })
-});
+  // PLAK HIER DE TWEE DELEN VAN DE URL AAN ELKAAR
+  const response = await fetch('https://api.findrefurbished.com/indexes/products/search', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer 2a7698b35be6bcba386bd41f6a840d8890e332f6b61b57a3276b2e19b57fea70'
+    },
+    body: JSON.stringify({
+      filter: `variant_slug = "${slug}"`,
+      limit: 1
+    })
+  });
 
-
-debugInfo = await response.json();
+  debugInfo = await response.json();
   
   if (debugInfo.hits && debugInfo.hits.length > 0) {
-    product = debugInfo.hits[0]; // Pak het eerste product
+    product = debugInfo.hits[0];
   }
 } catch (e) {
   debugInfo = { error: e.message };
 }
 
-// Sorteer de aanbiedingen als het product gevonden is
+// Sorteer de deals op prijs (laagste eerst)
 const sortedOffers = product?.offers?.sort((a, b) => a.price - b.price) || [];
 ---
 
-<Layout title={product ? `${product.title_h1} Vergelijken` : "Product niet gevonden"}>
-  <main class="p-10 max-w-5xl mx-auto">
-    <!-- Hieronder komt je HTML die we eerder hebben gemaakt -->
+<Layout title={product ? `${product.title_h1} Vergelijken` : "Laden..."}>
+  <main class="max-w-5xl mx-auto px-4 py-12">
     {!product ? (
       <div class="bg-red-50 p-8 border border-red-200 rounded-xl">
-         <h1 class="text-red-600 font-bold text-2xl mb-4">Product niet gevonden!</h1>
-         <pre class="bg-gray-900 text-green-400 p-4 rounded overflow-auto text-xs">
-           {JSON.stringify(debugInfo, null, 2)}
-         </pre>
+        <h1 class="text-red-600 font-bold text-2xl mb-4">Product niet gevonden!</h1>
+        <p class="mb-4">Zocht naar: <strong>{slug}</strong></p>
+        <pre class="bg-gray-900 text-green-400 p-4 rounded overflow-auto text-xs">
+          {JSON.stringify(debugInfo, null, 2)}
+        </pre>
       </div>
     ) : (
-      <div>
-        <h1 class="text-4xl font-black">{product.title_h1}</h1>
-        <!-- De rest van de product weergave... -->
+      <!-- HIER KOMT DE MOOIE PAGINA -->
+      <div class="grid md:grid-cols-2 gap-12 mb-12">
+        <div class="bg-white p-8 rounded-3xl border border-gray-100 flex justify-center">
+          <img 
+            src={`https://img.findrefurbished.com{product.master_id}.png`} 
+            class="max-h-[400px] object-contain" 
+            onerror="this.src='https://placehold.co'"
+          />
+        </div>
+        <div>
+          <h1 class="text-4xl font-black text-gray-900 mb-4">{product.title_h1}</h1>
+          <div class="inline-block bg-blue-600 text-white px-6 py-4 rounded-2xl">
+            <span class="text-4xl font-black">€{Number(product.min_price).toFixed(2)}</span>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="text-2xl font-bold mb-6">Beschikbare Deals</h2>
+      <div class="space-y-4">
+        {sortedOffers.map((offer) => (
+          <div class="p-6 bg-white border border-gray-100 rounded-2xl flex justify-between items-center shadow-sm">
+            <div>
+              <div class="font-black text-xl">{offer.merchant}</div>
+              <div class="text-gray-400 text-sm uppercase font-bold">{offer.condition}</div>
+            </div>
+            <div class="text-right">
+              <div class="text-2xl font-black mb-2">€{Number(offer.price).toFixed(2)}</div>
+              <a href={offer.link} target="_blank" class="bg-gray-900 text-white px-6 py-2 rounded-xl font-bold text-sm">Bekijk</a>
+            </div>
+          </div>
+        ))}
       </div>
     )}
   </main>
