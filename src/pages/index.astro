@@ -19,25 +19,36 @@ import Layout from '../layouts/Layout.astro';
 <script is:inline src="https://cdn.jsdelivr.net/npm/instantsearch.js@4"></script>
 
 <script is:inline>
-  function testMeili() {
+    function testMeili() {
     const dataEl = document.getElementById('meili-data');
-    const host = dataEl.dataset.host;
+    
+    // FIX 1: We forceren HTTPS
+    const host = dataEl.dataset.host.replace('http://', 'https://');
     const key = dataEl.dataset.key;
 
     console.log("--- DEBUG START ---");
-    console.log("Host:", host);
-    console.log("Key (eerste 5):", key.substring(0, 5) + "...");
+    console.log("Verbinden met:", host);
 
     if (typeof instantMeiliSearch === 'undefined') {
       console.error("ERROR: MeiliSearch bibliotheek niet geladen!");
       return;
     }
 
-    const searchClient = instantMeiliSearch(host, key);
+    const meiliClient = instantMeiliSearch(host, key);
+
+    // FIX 2: De kogelvrije wrapper voor de searchClient
+    const searchClient = {
+      search(requests) {
+        return meiliClient.search(requests);
+      },
+      searchForFacetValues(requests) {
+        return meiliClient.searchForFacetValues(requests);
+      }
+    };
 
     const search = instantsearch({
       indexName: 'products',
-      searchClient: searchClient,
+      searchClient: searchClient, // Gebruik de wrapper
     });
 
     search.addWidgets([
@@ -51,12 +62,10 @@ import Layout from '../layouts/Layout.astro';
       })
     ]);
 
-    // Luister naar wat Meilisearch echt teruggeeft
     search.on('render', () => {
       const results = search.helper.lastResults;
       if (results) {
-        console.log("Meilisearch antwoord:", results);
-        console.log("Aantal producten gevonden:", results.nbHits);
+        console.log("Meilisearch resultaten:", results.nbHits);
       }
     });
 
@@ -67,6 +76,7 @@ import Layout from '../layouts/Layout.astro';
       console.error("Crash tijdens starten:", err);
     }
   }
+
 
   // Wacht even tot alles echt geladen is
   setTimeout(testMeili, 1000);
