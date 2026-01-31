@@ -7,18 +7,19 @@ let product = null;
 let debugInfo = null;
 
 try {
-  const response = await fetch('https://api.findrefurbished.com/indexes/products/search', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      // We gebruiken de Master Key omdat dit veilig op de Vercel-server gebeurt
-      'Authorization': 'Bearer Test543' 
-    },
-    body: JSON.stringify({
-      filter: `variant_slug = "${slug}"`,
-      limit: 1
-    })
-  });
+  const apiUrl = "https://api.findrefurbished.com/indexes/products/search";
+
+const response = await fetch(apiUrl, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer Test543'
+  },
+  body: JSON.stringify({
+    filter: `variant_slug = "${slug}"`,
+    limit: 1
+  })
+});
 
   const data = await response.json();
   
