@@ -51,17 +51,29 @@ import Layout from '../layouts/Layout.astro';
     const key = dataEl.dataset.key;
 
     // Handmatige SearchClient om Astro-bundler fouten te omzeilen
-            const searchClient = {
+          const searchClient = {
       async search(requests) {
-        // InstantSearch kan meerdere verzoeken tegelijk sturen (bijv. voor hits en voor facetten)
         const responses = await Promise.all(
           requests.map(async (request) => {
+            // We halen de params direct uit het request object
             const { indexName, params } = request;
             
-            // Haal de filters op. Let op: we gebruiken params.filters direct
-            const filterString = params.filters ? params.filters.replace(/:/g, ' = ') : "";
+            // Log de volledige params om te zien wat InstantSearch stuurt
+            console.log("Rauwe params van IS:", params);
+
+            // We bouwen de filterstring. We proberen zowel params.filters als params.facetFilters
+            let filterString = params.filters || "";
             
-            console.log("Verzoek voor", indexName, "| Filter:", filterString);
+            // Fallback: als filters leeg is, checken we of er facetFilters zijn (v4 stijl)
+            if (!filterString && params.facetFilters) {
+              filterString = params.facetFilters
+                .map(f => Array.isArray(f) ? `(${f.map(v => v.replace(':', ' = ')).join(' OR ')})` : f.replace(':', ' = '))
+                .join(' AND ');
+            } else {
+              filterString = filterString.replace(/:/g, ' = ');
+            }
+
+            console.log("Uiteindelijk filter naar Meili:", filterString);
 
             const res = await fetch(`${host}/indexes/${indexName}/search`, {
               method: 'POST',
@@ -72,7 +84,7 @@ import Layout from '../layouts/Layout.astro';
               body: JSON.stringify({
                 q: params.query || "",
                 limit: 20,
-                filter: filterString,
+                filter: filterString, // De vertaalde string
                 facets: ["brand", "offers.condition"]
               })
             });
@@ -83,7 +95,7 @@ import Layout from '../layouts/Layout.astro';
               hits: data.hits,
               nbHits: data.estimatedTotalHits || data.hits.length,
               nbPages: 1,
-              page: 0,
+              page: params.page || 0,
               processingTimeMS: data.processingTimeMs,
               hitsPerPage: 20,
               query: params.query,
@@ -96,6 +108,7 @@ import Layout from '../layouts/Layout.astro';
         return { results: responses };
       }
     };
+
 
 
     const search = instantsearch({
