@@ -93,8 +93,10 @@ import Layout from '../layouts/Layout.astro';
         templates: {
           item: (hit) => `
             <div class="p-4 border border-gray-200 mb-2 bg-white rounded-xl shadow-sm flex items-center gap-4">
-              <img src="https://img.findrefurbished.com/${hit.master_id}.length > 0 ? hit.master_id : 'placeholder'}.png" class="w-16 h-16 object-contain" onerror="this.src='https://placehold.co/200x200?text=Geen+Foto'" />
-              <div class="flex-grow">
+              
+              <img src={`https://img.findrefurbished.com/${hit.master_id}.png`} class="w-16 h-16 object-contain" onerror="this.src='https://placehold.co/200x200?text=Geen+Foto'"/>
+
+                <div class="flex-grow">
                 <div class="font-bold text-gray-900 leading-tight">${hit.title_h1}</div>
                 <div class="text-[10px] text-gray-400 uppercase font-bold tracking-widest mt-1">${hit.brand}</div>
               </div>
