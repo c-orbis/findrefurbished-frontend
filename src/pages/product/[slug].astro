@@ -6,40 +6,34 @@ const { slug } = Astro.params;
 const host = import.meta.env.PUBLIC_MEILI_HOST;
 const key = import.meta.env.PUBLIC_MEILI_SEARCH_KEY;
 
-let product = null;
-let sortedOffers = [];
+// 1. Haal de data op (we gebruiken nu een simpelere filter string)
+const response = await fetch(`${host}/indexes/products/search`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${key}`
+  },
+  body: JSON.stringify({
+    // Belangrijk: Enkelvoudige quotes rond de variabele
+    filter: `variant_slug = '${slug}'`, 
+    limit: 1
+  })
+});
 
-try {
-  const response = await fetch(`${host}/indexes/products/search`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${key}`
-    },
-    body: JSON.stringify({
-  // Gebruik enkelvoudige quotes rond de slug
-  filter: `variant_slug = '${slug}'`, 
-  limit: 1
-})
-  });
+const searchData = await response.json();
 
-  const searchData = await response.json();
-  
-  // Veilig checken of er data is voordat we hits[0] aanroepen
-  if (searchData.hits && searchData.hits.length > 0) {
-    product = searchData.hits[0];
-    sortedOffers = product.offers?.sort((a, b) => a.price - b.price) || [];
-  }
-} catch (error) {
-  console.error("Fetch error:", error);
-}
+// 2. Check of we echt een hit hebben
+const product = (searchData.hits && searchData.hits.length > 0) ? searchData.hits[0] : null;
 
-// Als er geen product is gevonden, stuur naar de 404 pagina
+// 3. Als het product niet bestaat, stuur naar 404
 if (!product) {
+  // Voor debuggen kun je deze regel tijdelijk veranderen in: 
+  // throw new Error(`Product niet gevonden voor slug: ${slug}`);
   return Astro.redirect('/404');
 }
----
 
+const sortedOffers = product.offers?.sort((a, b) => a.price - b.price) || [];
+---
 
 <Layout title={`${product.title_h1} Vergelijken - Vind Refurbished`}>
   <main class="max-w-5xl mx-auto px-4 py-12">
