@@ -9,14 +9,14 @@ const { slug } = Astro.params;
 
 let product = null;
 // TIJDELIJK VERVANGEN OM TE TESTEN:
-//const key = "Test543"; 
+const key = "Test543"; 
 
 try {
     const response = await fetch('https://api.findrefurbished.com/indexes/products/search', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer Test543' // Gebruik even de Master Key voor de zekerheid
+      'Authorization': 'Bearer ' + key
     },
     body: JSON.stringify({
       q: slug, 
