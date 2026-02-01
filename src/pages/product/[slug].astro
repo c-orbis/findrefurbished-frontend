@@ -8,8 +8,6 @@ const host = import.meta.env.PUBLIC_MEILI_HOST || "https://api.findrefurbished.c
 const key = import.meta.env.MEILI_SERVER_KEY || import.meta.env.PUBLIC_MEILI_SEARCH_KEY;
 
 let product = null;
-// TIJDELIJK VERVANGEN OM TE TESTEN:
-//const key = "Test543"; 
 
 try {
     // Bouw de URL op een veilige manier
@@ -37,7 +35,7 @@ try {
 }
 
 // Zet de redirect tijdelijk uit tot je zeker weet dat het werkt
-// if (!product) { return Astro.redirect('/404'); }
+if (!product) { return Astro.redirect('/404'); }
 
 const sortedOffers = product?.offers?.sort((a, b) => Number(a.price) - Number(b.price)) || [];
 ---
