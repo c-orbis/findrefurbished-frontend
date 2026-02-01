@@ -5,8 +5,14 @@ const { slug } = Astro.params;
 
 // Veilig ophalen van de variabelen uit Vercel
 const host = import.meta.env.PUBLIC_MEILI_HOST;
+const serverKey = import.meta.env.MEILI_SERVER_KEY;
 const key = import.meta.env.PUBLIC_MEILI_SEARCH_KEY;
 
+// Kies de sleutel die beschikbaar is
+const key = serverKey || publicKey;
+
+// Debug log: Dit zie je in je Vercel Logs tabblad om te checken of de key geladen is
+console.log("Sleutel geladen:", key ? "JA (begint met " + key.substring(0,4) + ")" : "NEE");
 let product = null;
 
 try {
