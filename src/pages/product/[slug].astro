@@ -5,7 +5,7 @@ const { slug } = Astro.params;
 
 // Gebruik de variabelen, maar met de 'oude' vertrouwde optel-methode
 const host = import.meta.env.PUBLIC_MEILI_HOST || "https://api.findrefurbished.com";
-const key = import.meta.env.MEILI_SERVER_KEY || import.meta.env.PUBLIC_MEILI_SEARCH_KEY;
+const key = import.meta.env.MEILI_SERVER_KEY || import.meta.env.PUBLIC_MEILI_SEARCH_KEY || "Test543";
 
 let product = null;
 // TIJDELIJK VERVANGEN OM TE TESTEN:
