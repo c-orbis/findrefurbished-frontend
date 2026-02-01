@@ -16,19 +16,19 @@ let product = null;
 const key = "Test543"; 
 
 try {
-  const response = await fetch(host + '/indexes/products/search', {
+  //const response = await fetch(host + '/indexes/products/search', {
+  const response = await fetch('https://api.findrefurbished.com/indexes/products/search', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      // We gebruiken de 'oude' methode die bewezen werkt
-      'Authorization': 'Bearer ' + key
+      'Authorization': 'Bearer Test543'
     },
     body: JSON.stringify({
-      filter: "variant_slug = '" + slug + "'",
+      q: slug, // Zoek op de tekst van de slug
+      filter: `variant_slug = "${slug}"`, // Filter op de exacte slug
       limit: 1
     })
   });
-
   const data = await response.json();
   if (data.hits && data.hits.length > 0) {
   product = data.hits[0]; // GOED: Dit pakt het eerste product uit de lijst
