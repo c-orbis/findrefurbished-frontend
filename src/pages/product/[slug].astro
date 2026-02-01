@@ -6,7 +6,7 @@ const { slug } = Astro.params;
 // Veilig ophalen van de variabelen uit Vercel
 const host = import.meta.env.PUBLIC_MEILI_HOST;
 const serverKey = import.meta.env.MEILI_SERVER_KEY;
-const key = import.meta.env.PUBLIC_MEILI_SEARCH_KEY;
+const publicKey = import.meta.env.PUBLIC_MEILI_SEARCH_KEY;
 
 // Kies de sleutel die beschikbaar is
 const key = serverKey || publicKey;
