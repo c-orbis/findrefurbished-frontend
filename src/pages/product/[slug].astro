@@ -18,7 +18,8 @@ try {
       'Authorization': 'Bearer ' + key
     },
     body: JSON.stringify({
-      filter: `variant_slug = "${slug}"`,
+      // We gebruiken enkelvoudige quotes binnen de filter string
+      filter: `variant_slug = '${slug}'`,
       limit: 1
     })
   });
