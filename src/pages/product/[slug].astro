@@ -1,78 +1,87 @@
+check onderstaande code want we krijgen weer een fout:
+Productgegevens worden geladen of zijn niet gevonden...
+Slug: apple-iphone-15-pro-256gb-black
+
 ---
 import Layout from '../../layouts/Layout.astro';
 
 const { slug } = Astro.params;
 
-// Forceer de juiste waarden
-const host = "https://api.findrefurbished.com";
-const key = "Test543"; 
+// Gebruik de variabelen, maar met de 'oude' vertrouwde optel-methode
+const host = import.meta.env.PUBLIC_MEILI_HOST || "https://api.findrefurbished.com";
+//const key = import.meta.env.MEILI_SERVER_KEY || import.meta.env.PUBLIC_MEILI_SEARCH_KEY || "Test543";
 
 let product = null;
+// TIJDELIJK VERVANGEN OM TE TESTEN:
+const key = "Test543"; 
 
 try {
-  // We plakken de sleutel DIRECT in de URL (noodgreep die altijd werkt)
-  const apiUrl = `${host}/indexes/products/search?apiKey=${key}`;
-  
-  const response = await fetch(apiUrl, {
+  const response = await fetch(host + '/indexes/products/search', {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      // We gebruiken de 'oude' methode die bewezen werkt
+      'Authorization': 'Bearer ' + key
     },
     body: JSON.stringify({
-      filter: `variant_slug = '${slug}'`,
+      filter: "variant_slug = '" + slug + "'",
       limit: 1
     })
   });
 
   const data = await response.json();
-  
   if (data.hits && data.hits.length > 0) {
-    product = data.hits[0];
-  }
+  product = data.hits[0]; // GOED: Dit pakt het eerste product uit de lijst
+}
 } catch (e) {
   console.error("Fetch error:", e.message);
 }
 
-// Als het echt niet lukt, laten we een simpele tekst zien ipv een redirect
-// Zo zien we of de pagina zelf wel laadt
+// Zet de redirect tijdelijk uit tot je zeker weet dat het werkt
+// if (!product) { return Astro.redirect('/404'); }
+
+const sortedOffers = product?.offers?.sort((a, b) => Number(a.price) - Number(b.price)) || [];
 ---
 
-<Layout title={product ? product.title_h1 : "Laden..."}>
+<Layout title={product ? `${product.title_h1} Vergelijken` : "Laden..."}>
   <main class="max-w-5xl mx-auto px-4 py-12">
     {!product ? (
-      <div class="text-center p-20 bg-gray-50 rounded-3xl border-2 border-dashed">
-        <h1 class="text-2xl font-bold text-gray-400">Product niet gevonden in de database</h1>
-        <p class="text-gray-400 mt-2 italic">Slug: {slug}</p>
-        <a href="/" class="mt-6 inline-block bg-blue-600 text-white px-6 py-2 rounded-xl font-bold">Terug naar zoeken</a>
+      <div class="p-10 text-center bg-gray-50 rounded-2xl border-2 border-dashed">
+        <h1 class="text-xl font-bold text-gray-400">Productgegevens worden geladen of zijn niet gevonden...</h1>
+        <p class="text-sm text-gray-400 mt-2">Slug: {slug}</p>
       </div>
     ) : (
-      <!-- Hier komt je volledige mooie product styling die we eerder hebben gemaakt -->
+      <!-- De nieuwe, mooie styling -->
       <div class="grid md:grid-cols-2 gap-12 mb-16 items-center">
-         <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex justify-center">
-            <img 
-              src={`https://img.findrefurbished.com{product.master_id}.png`} 
-              alt={product.title_h1}
-              class="max-h-[400px] object-contain"
-              onerror="this.src='https://placehold.co/200x200?text=Geen+Foto'"
-            />
-         </div>
-         <div>
-            <nav class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Home / {product.brand}</nav>
-            <h1 class="text-4xl md:text-5xl font-black text-gray-900 mb-6 leading-tight">{product.title_h1}</h1>
-            <div class="inline-block bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-3xl">
-              €{Number(product.min_price).toFixed(2)}
-            </div>
-         </div>
+        <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex justify-center">
+          <img 
+            src={"https://img.findrefurbished.com/" + product.master_id + ".png"} 
+            alt={product.title_h1}
+            class="max-h-[400px] object-contain"
+            onerror="this.src='https://placehold.co/200x200?text=Geen+Foto'"
+          />
+        </div>
+        <div>
+          <nav class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">
+            Home / {product.brand}
+          </nav>
+          <h1 class="text-4xl md:text-5xl font-black text-gray-900 mb-6 leading-tight">{product.title_h1}</h1>
+          <div class="inline-block bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-3xl shadow-xl shadow-blue-100">
+            €{Number(product.min_price).toFixed(2)}
+          </div>
+        </div>
       </div>
-      
-      <!-- Deals sectie... -->
+
+      <h2 class="text-2xl font-black mb-8 tracking-tight italic text-gray-900">Beschikbare prijzen</h2>
       <div class="space-y-4">
-        {product.offers?.sort((a, b) => a.price - b.price).map((offer) => (
-          <div class="bg-white border border-gray-100 p-6 rounded-2xl flex justify-between items-center shadow-sm">
+        {sortedOffers.map((offer) => (
+          <div class="bg-white border border-gray-100 p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 hover:border-blue-500 transition-all shadow-sm">
             <div class="font-black text-xl text-gray-800">{offer.merchant}</div>
-            <div class="flex items-center gap-6">
-              <div class="text-2xl font-black">€{Number(offer.price).toFixed(2)}</div>
-              <a href={offer.link} target="_blank" rel="nofollow" class="bg-gray-900 text-white px-6 py-2 rounded-xl font-bold text-sm">Bekijk deal</a>
+            <div class="flex items-center gap-8">
+              <div class="text-2xl font-black text-gray-900">€{Number(offer.price).toFixed(2)}</div>
+              <a href={offer.link} target="_blank" rel="nofollow" class="bg-gray-900 text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-blue-600 transition-colors">
+                Bekijk deal
+              </a>
             </div>
           </div>
         ))}
