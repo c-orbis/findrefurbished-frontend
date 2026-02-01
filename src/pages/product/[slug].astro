@@ -2,11 +2,12 @@
 import Layout from '../../layouts/Layout.astro';
 
 const { slug } = Astro.params;
-const host = "https://api.findrefurbished.com";
-const key = "Test543"; 
+
+// We gebruiken weer de veilige variabelen uit Vercel
+const host = import.meta.env.PUBLIC_MEILI_HOST;
+const key = import.meta.env.MEILI_SERVER_KEY || import.meta.env.PUBLIC_MEILI_SEARCH_KEY;
 
 let product = null;
-let debugInfo = null;
 
 try {
   const response = await fetch(host + '/indexes/products/search', {
@@ -21,66 +22,67 @@ try {
     })
   });
 
-  debugInfo = await response.json();
-  
-  if (debugInfo.hits && debugInfo.hits.length > 0) {
-    product = debugInfo.hits[0];
+  const data = await response.json();
+  if (data.hits && data.hits.length > 0) {
+    product = data.hits[0];
   }
 } catch (e) {
-  debugInfo = { error: e.message };
+  console.error("Fetch error:", e);
 }
 
-const sortedOffers = product?.offers?.sort((a, b) => Number(a.price) - Number(b.price)) || [];
+if (!product) {
+  return Astro.redirect('/404');
+}
+
+const sortedOffers = product.offers?.sort((a, b) => Number(a.price) - Number(b.price)) || [];
 ---
 
-<Layout title={product ? product.title_h1 : "Debug Mode"}>
-  <main class="max-w-5xl mx-auto px-4 py-12">
-    {!product ? (
-      <div class="p-10 bg-red-50 border-2 border-red-200 rounded-2xl">
-        <h1 class="text-red-600 font-bold text-xl mb-4">Debug Informatie:</h1>
-        <p class="mb-2"><strong>Gezochte Slug:</strong> {slug}</p>
-        <p class="mb-4"><strong>Antwoord van Server:</strong></p>
-        <pre class="bg-gray-900 text-green-400 p-4 rounded overflow-auto text-xs">
-          {JSON.stringify(debugInfo, null, 2)}
-        </pre>
+<Layout title={`${product.title_h1} Vergelijken - Vind Refurbished`}>
+  <main class="max-w-5xl mx-auto px-4 py-12 text-gray-900">
+    <!-- Product Header -->
+    <div class="grid md:grid-cols-2 gap-12 mb-16 items-center">
+      <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex justify-center hover:shadow-lg transition-shadow duration-300">
+        <img 
+          src={"https://img.findrefurbished.com" + product.master_id + ".png"} 
+          alt={product.title_h1}
+          class="max-h-[400px] object-contain"
+          onerror="this.src='https://placehold.co/200x200?text=Geen+Foto'"
+        />
       </div>
-    ) : (
-      <!-- De rest van je werkende styling code (blijft hetzelfde) -->
-      <!-- De nieuwe, mooie styling -->
-      <div class="grid md:grid-cols-2 gap-12 mb-16 items-center">
-        <div class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex justify-center">
-          <img 
-            src={"https://img.findrefurbished.com/" + product.master_id + ".png"} 
-            alt={product.title_h1}
-            class="max-h-[400px] object-contain"
-            onerror="this.src='https://placehold.co/200x200?text=Geen+Foto'"
-          />
-        </div>
-        <div>
-          <nav class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">
-            Home / {product.brand}
-          </nav>
-          <h1 class="text-4xl md:text-5xl font-black text-gray-900 mb-6 leading-tight">{product.title_h1}</h1>
-          <div class="inline-block bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-3xl shadow-xl shadow-blue-100">
-            €{Number(product.min_price).toFixed(2)}
-          </div>
+      <div>
+        <nav class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">
+          Home / {product.brand}
+        </nav>
+        <h1 class="text-4xl md:text-5xl font-black text-gray-900 mb-6 leading-tight tracking-tight">{product.title_h1}</h1>
+        <div class="inline-block bg-blue-600 text-white px-8 py-4 rounded-2xl font-black text-3xl shadow-xl shadow-blue-100">
+          €{Number(product.min_price).toFixed(2)}
         </div>
       </div>
+    </div>
 
-      <h2 class="text-2xl font-black mb-8 tracking-tight italic text-gray-900">Beschikbare prijzen</h2>
-      <div class="space-y-4">
-        {sortedOffers.map((offer) => (
-          <div class="bg-white border border-gray-100 p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 hover:border-blue-500 transition-all shadow-sm">
-            <div class="font-black text-xl text-gray-800">{offer.merchant}</div>
-            <div class="flex items-center gap-8">
-              <div class="text-2xl font-black text-gray-900">€{Number(offer.price).toFixed(2)}</div>
-              <a href={offer.link} target="_blank" rel="nofollow" class="bg-gray-900 text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-blue-600 transition-colors">
-                Bekijk deal
-              </a>
-            </div>
+    <!-- Prijstabel -->
+    <h2 class="text-2xl font-black mb-8 tracking-tight italic">Beschikbare prijzen bij winkels</h2>
+    <div class="space-y-4">
+      {sortedOffers.map((offer) => (
+        <div class="bg-white border border-gray-100 p-6 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6 hover:border-blue-500 transition-all shadow-sm">
+          <div class="flex-grow flex items-center gap-4">
+             <!-- Placeholder voor Merchant Logo -->
+             <div class="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center font-bold text-gray-300 text-xs uppercase">
+               {offer.merchant.charAt(0)}
+             </div>
+             <div>
+               <div class="font-black text-xl text-gray-800">{offer.merchant}</div>
+               <div class="text-[10px] uppercase font-bold text-gray-400 tracking-widest">{offer.condition}</div>
+             </div>
           </div>
-        ))}
-      </div>
-    )}
+          <div class="flex items-center gap-8">
+            <div class="text-2xl font-black">€{Number(offer.price).toFixed(2)}</div>
+            <a href={offer.link} target="_blank" rel="nofollow" class="bg-gray-900 text-white px-8 py-3 rounded-xl font-bold text-sm hover:bg-blue-600 transition-colors shadow-lg">
+              Bekijk deal
+            </a>
+          </div>
+        </div>
+      ))}
+    </div>
   </main>
 </Layout>
