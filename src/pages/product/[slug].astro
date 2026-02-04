@@ -40,6 +40,26 @@ if (!product) { return Astro.redirect('/404'); }
 
 const sortedOffers = product?.offers?.sort((a, b) => Number(a.price) - Number(b.price)) || [];
 
+// 1. Maak een pakkende omschrijving voor Google
+const seoDescription = `Vergelijk prijzen voor de refurbished ${product.title_h1}. Nu beschikbaar vanaf €${Number(product.min_price).toFixed(2)} bij ${product.offers?.length} verschillende aanbieders.`;
+
+// 2. Bouw het JSON-LD Schema (Rich Snippet)
+const productSchema = {
+  "@context": "https://schema.org",
+  "@type": "Product",
+  "name": product.title_h1,
+  "image": `https://img.findrefurbished.com/${product.master_id}.png`,
+  "description": seoDescription,
+  "brand": { "@type": "Brand", "name": product.brand },
+  "offers": {
+    "@type": "AggregateOffer",
+    "priceCurrency": "EUR",
+    "lowPrice": product.min_price,
+    "offerCount": product.offers?.length || 1,
+    "availability": "https://schema.orgInStock"
+  }
+};
+
 // s-maxage=3600 (Vercel onthoudt de pagina 1 uur lang op hun servers)
 // stale-while-revalidate=600 (Als de cache verloopt, serveer dan nog 10 min de oude terwijl de nieuwe op de achtergrond wordt gemaakt)
 Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=600');
