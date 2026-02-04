@@ -20,15 +20,6 @@ const { title, description, schema } = Astro.props;
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/@meilisearch/instant-meilisearch/dist/instant-meilisearch.umd.min.js" as="script">
     <link rel="preload" href="https://cdn.jsdelivr.net/npm/instantsearch.js@4" as="script">
 
-    {Astro.params.slug && (
-  <link 
-    rel="preload" 
-    as="image" 
-    href={`https://img.findrefurbished.com{product_master_id_placeholder}.png`} 
-    fetchpriority="high"
-  />
-)}
-
     <!-- 2. SEO & Meta -->
     {description && <meta name="description" content={description} />}
     {schema && <script type="application/ld+json" set:html={JSON.stringify(schema)} />}
@@ -40,6 +31,7 @@ const { title, description, schema } = Astro.props;
     />
 
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <slot name="head" />
   </head>
   <body class="bg-gray-50">
     <slot />
