@@ -1,6 +1,5 @@
 ---
 import SpeedInsights from '@vercel/speed-insights/astro';
-// We voegen 'description' en 'schema' toe aan de props
 const { title, description, schema } = Astro.props;
 ---
 <!DOCTYPE html>
@@ -10,33 +9,25 @@ const { title, description, schema } = Astro.props;
     <meta name="viewport" content="width=device-width" />
     <title>{title}</title>
 
+    <!-- 1. Snelle verbindingen -->
     <link rel="preconnect" href="https://img.findrefurbished.com">
     <link rel="preconnect" href="https://api.findrefurbished.com">
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
 
+    <!-- 2. SEO & Meta -->
     {description && <meta name="description" content={description} />}
-    
-    <!-- Google Rich Snippets (Schema.org) -->
     {schema && <script type="application/ld+json" set:html={JSON.stringify(schema)} />}
+    
+    <!-- 3. De CSS fix: We laden deze weer in de head, maar geoptimaliseerd -->
+    <link 
+      rel="stylesheet" 
+      href="https://cdn.jsdelivr.net/npm/instantsearch.css@8.1.0/themes/satellite-min.css"
+    />
 
-    
-    
-    <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   </head>
   <body class="bg-gray-50">
     <slot />
-    <!-- We laden de InstantSearch CSS later voor de styling van de filters -->
-    <link 
-    rel="stylesheet" 
-    href="https://cdn.jsdelivr.net/npm/instantsearch.css@8.1.0/themes/satellite-min.css"
-    media="print" 
-    onload="this.media='all'"
-    >
-<noscript>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/instantsearch.css@8.1.0/themes/satellite-min.css">
-</noscript>
     <SpeedInsights />
   </body>
 </html>
