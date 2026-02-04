@@ -58,12 +58,15 @@ Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-
           
           <!-- PRODUCTFOTO FIX -->
           <Image 
-            src={"https://img.findrefurbished.com/" + product.master_id + ".png"} 
-            alt={`Refurbished ${product.title_h1} - ${product.brand} smartphone`}
-            width={500} 
-            height={500}
-            class="max-h-[400px] w-auto object-contain"
+            src={`https://img.findrefurbished.com{product.master_id}.png`}
+            alt={`Refurbished ${product.title_h1}`}
+            width={400} 
+            height={400}
+            format="webp"
+            quality="mid"
+            class="max-h-[350px] w-auto object-contain"
             loading="eager" 
+            fetchpriority="high" 
           />
 
         </div>
