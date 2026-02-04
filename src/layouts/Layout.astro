@@ -9,7 +9,10 @@ const { title, description, schema } = Astro.props;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>{title}</title>
-    
+
+    <link rel="preconnect" href="https://img.findrefurbished.com">
+    <link rel="preconnect" href="https://api.findrefurbished.com">
+
     {description && <meta name="description" content={description} />}
     
     <!-- Google Rich Snippets (Schema.org) -->
@@ -22,8 +25,16 @@ const { title, description, schema } = Astro.props;
   </head>
   <body class="bg-gray-50">
     <slot />
-    <!-- We laden de InstantSearch CSS direct voor de styling van de filters -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/instantsearch.css@8.1.0/themes/satellite-min.css">
+    <!-- We laden de InstantSearch CSS later voor de styling van de filters -->
+    <link 
+    rel="stylesheet" 
+    href="https://cdn.jsdelivr.net/npm/instantsearch.css@8.1.0/themes/satellite-min.css"
+    media="print" 
+    onload="this.media='all'"
+    >
+<noscript>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/instantsearch.css@8.1.0/themes/satellite-min.css">
+</noscript>
     <SpeedInsights />
   </body>
 </html>
