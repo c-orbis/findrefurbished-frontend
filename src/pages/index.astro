@@ -2,7 +2,10 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="Vind Refurbished - Vergelijk alle prijzen">
+<Layout 
+  title="Vind Refurbished - Vergelijk prijzen van refurbished iPhones & MacBooks"
+  description="Bespaar tot 40% op je volgende aankoop. Vergelijk live prijzen van alle grote refurbished aanbieders op één plek met de snelste vergelijker van Nederland."
+>
   <main class="max-w-7xl mx-auto px-4 py-8">
     <h1 class="text-4xl font-black mb-8 text-gray-900 leading-tight tracking-tight">Vind Refurbished</h1>
     
@@ -30,41 +33,34 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </main>
 
-  <!-- Data element (slechts één keer nodig) -->
+  <!-- Data element voor API configuratie -->
   <div id="meili-data" 
        data-host={import.meta.env.PUBLIC_MEILI_HOST} 
        data-key={import.meta.env.PUBLIC_MEILI_SEARCH_KEY}>
   </div>
 </Layout>
 
-<!-- 1. Laad de bibliotheken direct via CDN -->
+<!-- Scripts via CDN -->
 <script is:inline src="https://cdn.jsdelivr.net/npm/@meilisearch/instant-meilisearch/dist/instant-meilisearch.umd.min.js"></script>
 <script is:inline src="https://cdn.jsdelivr.net/npm/instantsearch.js@4"></script>
+
 
 <script is:inline>
   async function startSearch() {
     const dataEl = document.getElementById('meili-data');
     if (!dataEl) return;
 
-    // Forceer HTTPS voor de API aanroep
     const host = dataEl.dataset.host.replace('http://', 'https://');
     const key = dataEl.dataset.key;
 
-    // Handmatige SearchClient om Astro-bundler fouten te omzeilen
-          const searchClient = {
+    // Custom SearchClient voor directe API communicatie
+    const searchClient = {
       async search(requests) {
         const responses = await Promise.all(
           requests.map(async (request) => {
-            // We halen de params direct uit het request object
             const { indexName, params } = request;
             
-            // Log de volledige params om te zien wat InstantSearch stuurt
-            console.log("Rauwe params van IS:", params);
-
-            // We bouwen de filterstring. We proberen zowel params.filters als params.facetFilters
             let filterString = params.filters || "";
-            
-            // Fallback: als filters leeg is, checken we of er facetFilters zijn (v4 stijl)
             if (!filterString && params.facetFilters) {
               filterString = params.facetFilters
                 .map(f => Array.isArray(f) ? `(${f.map(v => v.replace(':', ' = ')).join(' OR ')})` : f.replace(':', ' = '))
@@ -72,8 +68,6 @@ import Layout from '../layouts/Layout.astro';
             } else {
               filterString = filterString.replace(/:/g, ' = ');
             }
-
-            console.log("Uiteindelijk filter naar Meili:", filterString);
 
             const res = await fetch(`${host}/indexes/${indexName}/search`, {
               method: 'POST',
@@ -84,7 +78,7 @@ import Layout from '../layouts/Layout.astro';
               body: JSON.stringify({
                 q: params.query || "",
                 limit: 20,
-                filter: filterString, // De vertaalde string
+                filter: filterString,
                 facets: ["brand", "offers.condition"]
               })
             });
@@ -104,12 +98,9 @@ import Layout from '../layouts/Layout.astro';
             };
           })
         );
-
         return { results: responses };
       }
     };
-
-
 
     const search = instantsearch({
       indexName: 'products',
@@ -117,13 +108,11 @@ import Layout from '../layouts/Layout.astro';
     });
 
     search.addWidgets([
-      // Zoekbalk
       instantsearch.widgets.searchBox({ 
         container: '#searchbox', 
         placeholder: 'Zoek op model (bijv. iPhone 15 Pro)...' 
       }),
 
-      // Merk Filter
       instantsearch.widgets.refinementList({
         container: '#brand-filter',
         attribute: 'brand',
@@ -138,7 +127,6 @@ import Layout from '../layouts/Layout.astro';
         },
       }),
 
-      // Conditie Filter
       instantsearch.widgets.refinementList({
         container: '#condition-filter',
         attribute: 'offers.condition',
@@ -159,15 +147,25 @@ import Layout from '../layouts/Layout.astro';
         },
       }),
 
-      // Resultatenlijst
       instantsearch.widgets.hits({
         container: '#hits',
         templates: {
           item: (hit) => `
             <div class="p-4 border border-gray-200 mb-2 bg-white rounded-xl shadow-sm flex items-center gap-4 hover:border-blue-500 transition-colors group">
-              <img src="https://img.findrefurbished.com/${hit.master_id}.png" class="w-16 h-16 object-contain" onerror="this.src='https://placehold.co/200x200?text=Geen+Foto'" />
+              <div class="w-16 h-16 flex-shrink-0 bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center">
+                <img 
+                  src="https://img.findrefurbished.com/${hit.master_id}.png" 
+                  alt="Refurbished ${hit.title_h1}"
+                  width="64"
+                  height="64"
+                  loading="lazy"
+                  decoding="async"
+                  class="max-w-full max-h-full object-contain group-hover:scale-110 transition-transform duration-300"
+                  onerror="this.src='https://placehold.co/200x200?text=Geen+Foto'" 
+                />
+              </div>
               <div class="flex-grow">
-                <div class="font-bold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors">${hit.title_h1}</div>
+                <h2 class="font-bold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors text-base">${hit.title_h1}</h2>
                 <div class="text-[10px] text-gray-400 uppercase font-bold tracking-widest mt-1">${hit.brand}</div>
               </div>
               <div class="text-right min-w-[100px]">
@@ -182,11 +180,8 @@ import Layout from '../layouts/Layout.astro';
     ]);
 
     search.start();
-    console.log("🚀 Zoekmachine inclusief filters operationeel!");
   }
 
-  // Initialisatie bij laden en Astro transities
   window.addEventListener('load', startSearch);
   document.addEventListener('astro:page-load', startSearch);
 </script>
-
