@@ -65,7 +65,11 @@ const productSchema = {
 Astro.response.headers.set('Cache-Control', 'public, s-maxage=3600, stale-while-revalidate=600');
 ---
 
-<Layout title={product ? `${product.title_h1} Vergelijken` : "Laden..."}>
+<Layout 
+  title={`${product.title_h1} Vergelijken | Vind Refurbished`}
+  description={seoDescription}
+  schema={productSchema}
+    >
   <main class="max-w-5xl mx-auto px-4 py-12">
     {!product ? (
       <div class="p-10 text-center bg-gray-50 rounded-2xl border-2 border-dashed">
