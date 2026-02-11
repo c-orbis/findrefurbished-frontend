@@ -5,7 +5,7 @@ import cloudflare from '@astrojs/cloudflare';
 export default defineConfig({
   integrations: [tailwind()],
   // 'hybrid' is beter voor je affiliate site: statisch waar mogelijk, SSR voor live prijzen
-  output: 'hybrid', 
+  output: 'server', 
   adapter: cloudflare({
     mode: 'directory'
   }),
