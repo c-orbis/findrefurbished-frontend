@@ -6,18 +6,13 @@ account_id = "d26204d25b76a4457b650af5b40179c1"
 # Workers.dev subdomain (backup URL + preview)
 workers_dev = true
 
-# Preview URLs voor testing
+# Preview URLs for testing
 preview_urls = true
 
-# Node.js compatibility voor Astro
+# Node.js compatibility for Astro
 compatibility_flags = ["nodejs_compat"]
 
-# Custom domain routes (production)
-routes = [
-  { pattern = "www.findrefurbished.com", custom_domain = true }
-]
-
-# Assets configuratie voor statische bestanden
+# Assets configuration for static files
 [assets]
 directory = "dist"
 binding = "ASSETS"
@@ -25,3 +20,19 @@ binding = "ASSETS"
 # Analytics & Monitoring
 [observability]
 enabled = true
+
+# ============================================
+# ENVIRONMENTS
+# ============================================
+
+# Development/Preview environment (dev branch)
+[env.dev]
+name = "findrefurbished-frontend-dev"
+workers_dev = true
+
+# Production environment (main branch)
+[env.production]
+name = "findrefurbished-frontend"
+routes = [
+  { pattern = "www.findrefurbished.com", custom_domain = true }
+]
