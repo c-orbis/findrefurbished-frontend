@@ -31,6 +31,10 @@ jobs:
 
       - name: Build project
         run: npm run build
+        env:
+          PUBLIC_MEILI_HOST: ${{ secrets.PUBLIC_MEILI_HOST }}
+          MEILI_SERVER_KEY: ${{ secrets.MEILI_SERVER_KEY }}
+          PUBLIC_MEILI_SEARCH_KEY: ${{ secrets.PUBLIC_MEILI_SEARCH_KEY }}
 
       - name: Deploy to Cloudflare Workers (production environment)
         uses: cloudflare/wrangler-action@v3
