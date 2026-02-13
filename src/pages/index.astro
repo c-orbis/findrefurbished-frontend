@@ -1,14 +1,18 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import Layout from "../layouts/Layout.astro";
 ---
 
-<Layout 
+<Layout
   title="Find Refurbished - Vergelijk prijzen van refurbished iPhones & MacBooks"
   description="Bespaar tot 40% op je volgende aankoop. Vergelijk live prijzen van alle grote refurbished aanbieders op één plek met de snelste vergelijker van Nederland."
 >
   <main class="max-w-7xl mx-auto px-4 py-8">
-    <h1 class="text-4xl font-black mb-8 text-gray-900 leading-tight tracking-tight">Vind Refurbished</h1>
-    
+    <h1
+      class="text-4xl font-black mb-8 text-gray-900 leading-tight tracking-tight"
+    >
+      Vind Refurbished
+    </h1>
+
     <!-- Zoekbalk -->
     <div id="searchbox" class="mb-8 min-h-[64px]"></div>
 
@@ -16,43 +20,58 @@ import Layout from '../layouts/Layout.astro';
       <!-- Sidebar voor filters -->
       <aside class="w-full md:w-64 space-y-8">
         <div>
-          <h3 class="font-bold mb-4 text-gray-900 uppercase text-[10px] tracking-widest italic border-b pb-2 border-gray-100">Merk</h3>
+          <h3
+            class="font-bold mb-4 text-gray-900 uppercase text-[10px] tracking-widest italic border-b pb-2 border-gray-100"
+          >
+            Merk
+          </h3>
           <div id="brand-filter"></div>
         </div>
-        
+
         <div>
-          <h3 class="font-bold mb-4 text-gray-900 uppercase text-[10px] tracking-widest italic border-b pb-2 border-gray-100">Conditie</h3>
+          <h3
+            class="font-bold mb-4 text-gray-900 uppercase text-[10px] tracking-widest italic border-b pb-2 border-gray-100"
+          >
+            Conditie
+          </h3>
           <div id="condition-filter"></div>
         </div>
       </aside>
 
       <!-- Resultaten -->
       <div class="flex-grow">
-          <div id="hits" class="min-h-[1000px]">
-            <div class="p-10 text-center text-gray-400 animate-pulse">Producten laden...</div>
+        <div id="hits" class="min-h-[1000px]">
+          <div class="p-10 text-center text-gray-400 animate-pulse">
+            Producten laden...
           </div>
+        </div>
       </div>
     </div>
   </main>
 
   <!-- Data element voor API configuratie -->
-  <div id="meili-data" 
-       data-host={import.meta.env.PUBLIC_MEILI_HOST} 
-       data-key={import.meta.env.PUBLIC_MEILI_SEARCH_KEY}>
+  <div
+    id="meili-data"
+    data-host={import.meta.env.PUBLIC_MEILI_HOST}
+    data-key={import.meta.env.PUBLIC_MEILI_SEARCH_KEY}
+  >
   </div>
 </Layout>
 
 <!-- Scripts via CDN -->
-<script is:inline src="https://cdn.jsdelivr.net/npm/@meilisearch/instant-meilisearch/dist/instant-meilisearch.umd.min.js"></script>
-<script is:inline src="https://cdn.jsdelivr.net/npm/instantsearch.js@4"></script>
-
+<script
+  is:inline
+  src="https://cdn.jsdelivr.net/npm/@meilisearch/instant-meilisearch/dist/instant-meilisearch.umd.min.js"
+></script>
+<script is:inline src="https://cdn.jsdelivr.net/npm/instantsearch.js@4"
+></script>
 
 <script is:inline>
   async function startSearch() {
-    const dataEl = document.getElementById('meili-data');
+    const dataEl = document.getElementById("meili-data");
     if (!dataEl) return;
 
-    const host = dataEl.dataset.host.replace('http://', 'https://');
+    const host = dataEl.dataset.host.replace("http://", "https://");
     const key = dataEl.dataset.key;
 
     // Custom SearchClient voor directe API communicatie
@@ -61,28 +80,32 @@ import Layout from '../layouts/Layout.astro';
         const responses = await Promise.all(
           requests.map(async (request) => {
             const { indexName, params } = request;
-            
+
             let filterString = params.filters || "";
             if (!filterString && params.facetFilters) {
               filterString = params.facetFilters
-                .map(f => Array.isArray(f) ? `(${f.map(v => v.replace(':', ' = ')).join(' OR ')})` : f.replace(':', ' = '))
-                .join(' AND ');
+                .map((f) =>
+                  Array.isArray(f)
+                    ? `(${f.map((v) => v.replace(":", " = ")).join(" OR ")})`
+                    : f.replace(":", " = "),
+                )
+                .join(" AND ");
             } else {
-              filterString = filterString.replace(/:/g, ' = ');
+              filterString = filterString.replace(/:/g, " = ");
             }
 
             const res = await fetch(`${host}/indexes/${indexName}/search`, {
-              method: 'POST',
+              method: "POST",
               headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${key}`
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${key}`,
               },
               body: JSON.stringify({
                 q: params.query || "",
                 limit: 20,
                 filter: filterString,
-                facets: ["brand", "offers.condition"]
-              })
+                facets: ["brand", "offers.condition"],
+              }),
             });
 
             const data = await res.json();
@@ -96,28 +119,28 @@ import Layout from '../layouts/Layout.astro';
               hitsPerPage: 20,
               query: params.query,
               facets: data.facetDistribution,
-              exhaustiveNbHits: true
+              exhaustiveNbHits: true,
             };
-          })
+          }),
         );
         return { results: responses };
-      }
+      },
     };
 
     const search = instantsearch({
-      indexName: 'products',
+      indexName: "products",
       searchClient: searchClient,
     });
 
     search.addWidgets([
-      instantsearch.widgets.searchBox({ 
-        container: '#searchbox', 
-        placeholder: 'Zoek op model (bijv. iPhone 15 Pro)...' 
+      instantsearch.widgets.searchBox({
+        container: "#searchbox",
+        placeholder: "Zoek op model (bijv. iPhone 15 Pro)...",
       }),
 
       instantsearch.widgets.refinementList({
-        container: '#brand-filter',
-        attribute: 'brand',
+        container: "#brand-filter",
+        attribute: "brand",
         templates: {
           item: `
             <label class="flex items-center gap-2 cursor-pointer py-1 group">
@@ -130,10 +153,10 @@ import Layout from '../layouts/Layout.astro';
       }),
 
       instantsearch.widgets.refinementList({
-        container: '#condition-filter',
-        attribute: 'offers.condition',
+        container: "#condition-filter",
+        attribute: "offers.condition",
         transformItems(items) {
-          return items.map(item => ({
+          return items.map((item) => ({
             ...item,
             label: item.label.charAt(0).toUpperCase() + item.label.slice(1),
           }));
@@ -149,13 +172,12 @@ import Layout from '../layouts/Layout.astro';
         },
       }),
 
-
       instantsearch.widgets.hits({
-        container: '#hits',
+        container: "#hits",
         templates: {
           item: (hit) => {
-            const displayTitle = hit.title_h1.replace('Refurbished ', '');
-            
+            const displayTitle = hit.title_h1.replace("Refurbished ", "");
+
             return `
             <div class="p-4 border border-gray-100 mb-3 bg-white rounded-2xl shadow-sm flex items-center gap-6 hover:border-blue-600 transition-all group">
               <!-- Compacte Product Foto -->
@@ -190,15 +212,16 @@ import Layout from '../layouts/Layout.astro';
             </div>
             `;
           },
-          empty: '<div class="p-10 text-center text-gray-500 italic">❌ Geen producten gevonden.</div>'
-        }
-      })
+          empty:
+            '<div class="p-10 text-center text-gray-500 italic">❌ Geen producten gevonden.</div>',
+        },
+      }),
     ]); // Sluit de widgets array en de addWidgets functie
 
     search.start();
   }
 
   // Zorgt dat de zoekmachine start bij laden en bij pagina-wissels
-  window.addEventListener('load', startSearch);
-  document.addEventListener('astro:page-load', startSearch);
+  window.addEventListener("load", startSearch);
+  document.addEventListener("astro:page-load", startSearch);
 </script>

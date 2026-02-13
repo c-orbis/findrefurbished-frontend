@@ -1,34 +1,53 @@
 ---
 const { title, description, schema } = Astro.props;
 ---
-<!DOCTYPE html>
+
+<!doctype html>
 <html lang="nl">
   <head>
     <!-- Remove when life -->
     <!-- meta name="robots" content="noindex, nofollow" -->
-    
+
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width" />
     <title>{title}</title>
 
     <!-- 1. Snelle verbindingen -->
-    <link rel="preconnect" href="https://img.findrefurbished.com">
-    <link rel="preconnect" href="https://api.findrefurbished.com">
-    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://img.findrefurbished.com" />
+    <link rel="preconnect" href="https://api.findrefurbished.com" />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
 
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/@meilisearch/instant-meilisearch/dist/instant-meilisearch.umd.min.js" as="script">
-    <link rel="preload" href="https://cdn.jsdelivr.net/npm/instantsearch.js@4" as="script">
+    <link
+      rel="preload"
+      href="https://cdn.jsdelivr.net/npm/@meilisearch/instant-meilisearch/dist/instant-meilisearch.umd.min.js"
+      as="script"
+    />
+    <link
+      rel="preload"
+      href="https://cdn.jsdelivr.net/npm/instantsearch.js@4"
+      as="script"
+    />
 
     <!-- 2. SEO & Meta -->
     {description && <meta name="description" content={description} />}
-    {schema && <script type="application/ld+json" set:html={JSON.stringify(schema)} />}
-    
+    {
+      schema && (
+        <script type="application/ld+json" set:html={JSON.stringify(schema)} />
+      )
+    }
+
     <!-- 3. De CSS fix: We laden deze weer in de head, maar geoptimaliseerd -->
-    <link 
-      rel="stylesheet" 
+    <link
+      rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/instantsearch.css@8.1.0/themes/satellite-min.css"
     />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <!-- Cloudflare Web Analytics -->
+    <script
+      defer
+      src="https://static.cloudflareinsights.com/beacon.min.js"
+      data-cf-beacon='{"token": "7a87fcce31704c13a0b71c696b09d892"}'
+    ></script><!-- End Cloudflare Web Analytics -->
   </head>
   <body class="bg-gray-50">
     <slot />
