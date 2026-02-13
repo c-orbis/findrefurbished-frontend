@@ -1,0 +1,38 @@
+name = "findrefurbished-frontend"
+main = "dist/_worker.js"
+compatibility_date = "2024-09-23"
+account_id = "d26204d25b76a4457b650af5b40179c1"
+
+# Workers.dev subdomain (backup URL + preview)
+workers_dev = true
+
+# Preview URLs for testing
+preview_urls = true
+
+# Node.js compatibility for Astro
+compatibility_flags = ["nodejs_compat"]
+
+# Assets configuration for static files
+[assets]
+directory = "dist"
+binding = "ASSETS"
+
+# Analytics & Monitoring
+[observability]
+enabled = true
+
+# ============================================
+# ENVIRONMENTS
+# ============================================
+
+# Development/Preview environment (dev branch)
+[env.dev]
+name = "findrefurbished-frontend-dev"
+workers_dev = true
+
+# Production environment (main branch)
+[env.production]
+name = "findrefurbished-frontend"
+routes = [
+  { pattern = "www.findrefurbished.com", custom_domain = true }
+]

@@ -1,0 +1,59 @@
+name: Deploy to Production
+
+# Trigger on push to main branch
+on:
+  push:
+    branches:
+      - main
+
+# Permissions for GitHub Actions
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy to Cloudflare Workers (Production)
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+        env:
+          PUBLIC_MEILI_HOST: ${{ secrets.PUBLIC_MEILI_HOST }}
+          MEILI_SERVER_KEY: ${{ secrets.MEILI_SERVER_KEY }}
+          PUBLIC_MEILI_SEARCH_KEY: ${{ secrets.PUBLIC_MEILI_SEARCH_KEY }}
+
+      - name: Deploy to Cloudflare Workers (production environment)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --env production
+        env:
+          NODE_VERSION: "20"
+
+      - name: Comment production URL on commit
+        uses: actions/github-script@v7
+        if: success()
+        with:
+          script: |
+            const sha = context.sha.substring(0, 7);
+            github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body: `🚀 **Production deployment successful!**\n\n🔗 **Live URL:** https://www.findrefurbished.com\n\nCommit: \`${sha}\``
+            })
