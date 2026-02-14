@@ -1,0 +1,34 @@
+name: Deploy Image Proxy Worker (preview)
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - "image-proxy/**"
+  pull_request:
+    branches: [dev]
+    paths:
+      - "image-proxy/**"
+
+jobs:
+  publish-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies (image-proxy)
+        working-directory: ./image-proxy
+        run: npm ci
+
+      - name: Publish image-proxy (preview)
+        working-directory: ./image-proxy
+        run: npx wrangler deploy --env preview
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

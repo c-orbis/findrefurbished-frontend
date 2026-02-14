@@ -1,0 +1,30 @@
+name: Deploy Image Proxy Worker (production)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "image-proxy/**"
+
+jobs:
+  publish-prod:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies (image-proxy)
+        working-directory: ./image-proxy
+        run: npm ci
+
+      - name: Publish image-proxy (production)
+        working-directory: ./image-proxy
+        run: npx wrangler deploy --env production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

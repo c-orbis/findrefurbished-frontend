@@ -6,6 +6,12 @@ compatibility_date = "2026-02-14"
 [vars]
 CLOUD_NAME = "dtdjjebzm"
 
-# Routes: img2.findrefurbished.com/*
-# Route: img2.findrefurbished.com/*
-# Doel: Proxy images to Cloudinary CDN with auto format and caching
+[env.preview]
+name = "image-proxy-dev"
+[env.preview.vars]
+CLOUD_NAME = "dtdjjebzm"
+
+[env.production]
+name = "image-proxy"
+[env.production.vars]
+CLOUD_NAME = "dtdjjebzm"
